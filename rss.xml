@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+  <channel>
+    <title>Árbol: Red Social Libre</title>
+    <link>https://usuario.github.io/arbol-social</link>
+    <description>Un espacio personal y libre para compartir ideas, multimedia y pensamientos.</description>
+    <language>es</language>
+
+    <item>
+      <title>Bienvenidos a Árbol</title>
+      <link>https://usuario.github.io/arbol-social</link>
+      <description>Este es mi espacio en Árbol: Red Social Libre...</description>
+      <pubDate>Fri, 27 Oct 2023 10:00:00 +0000</pubDate>
+      <enclosure url="https://usuario.github.io/arbol-social/media/foto-bienvenida.jpg" type="image/jpeg"/>
+    </item>
+
+    <item>
+      <title>Pensando en voz alta (Audio)</title>
+      <link>https://usuario.github.io/arbol-social</link>
+      <description>Hoy grabé un pequeño audio sobre mis pensamientos...</description>
+      <pubDate>Sat, 28 Oct 2023 14:30:00 +0000</pubDate>
+      <enclosure url="https://usuario.github.io/arbol-social/media/mi-podcast.mp3" type="audio/mpeg"/>
+    </item>
+    
+    <!-- Agrega más items aquí sincronizados con posts.json -->
+
+  </channel>
+</rss>

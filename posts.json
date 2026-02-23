@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1,
+    "date": "2023-10-27T10:00:00",
+    "title": "Bienvenidos a Árbol",
+    "content": "Este es mi espacio en Árbol: Red Social Libre. Aquí puedo publicar lo que quiera, sin censura y con mis propios archivos.",
+    "media": "foto-bienvenida.jpg",
+    "type": "image"
+  },
+  {
+    "id": 2,
+    "date": "2023-10-28T14:30:00",
+    "title": "Pensando en voz alta (Audio)",
+    "content": "Hoy grabé un pequeño audio sobre mis pensamientos regarding la tecnología descentralizada.",
+    "media": "mi-podcast.mp3",
+    "type": "audio"
+  },
+  {
+    "id": 3,
+    "date": "2023-10-29T09:15:00",
+    "title": "Video del jardín",
+    "content": "Miren cómo crecen las plantas este año. La naturaleza siempre encuentra el camino.",
+    "media": "jardin.mp4",
+    "type": "video"
+  },
+  {
+    "id": 4,
+    "date": "2023-10-30T16:45:00",
+    "title": "Manifiesto Digital (PDF)",
+    "content": "He escrito un documento sobre por qué creo que debemos ser dueños de nuestro código.",
+    "media": "manifiesto.pdf",
+    "type": "document"
+  }
+]

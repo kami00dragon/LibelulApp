@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArbolApp - Biblioteca y Red Social Integrada</title>
+    <!-- Librerías Externas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    
+    <style>
+        /* =========================================
+           CSS UNIFICADO (ULTIMATE WOOD THEME)
+           ========================================= */
+        :root {
+            --wood-dark: #451a03;
+            --wood-light: #78350f;
+            --leaf-green: #2e7d32;
+            --leaf-light: #66bb6a;
+            --flower-pink: #e91e63;
+            --text-parchment: #efebe9;
+            --border-stem: #1b5e20;
+            --sidebar-width: 340px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Georgia', serif;
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #fef3c7, #fcd34d);
+            color: var(--text-parchment);
+            overflow-x: hidden;
+            transition: overflow 0.3s ease;
+        }
+
+        /* Modos de Visualización para resolver conflictos de Scroll */
+        body.mode-library { overflow-y: auto; }
+        body.mode-social { 
+            overflow: hidden; 
+            background: var(--wood-dark);
+            background-image: repeating-linear-gradient(45deg, #3e2723 0, #3e2723 10px, #4e342e 10px, #4e342e 20px);
+            color: var(--text-parchment);
+            height: 100vh;
+        }
+
+        /* --- HEADER & NAV --- */
+        header {
+            background: linear-gradient(to bottom, var(--wood-dark), var(--wood-light), var(--wood-dark));
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            padding: 1rem 1rem 0 1rem;
+            position: relative; width: 100%; z-index: 50;
+            border-bottom: 4px solid #281a16;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .header-content { max-width: 1600px; margin: 0 auto; width: 100%; }
+
+        .nav-bar-wood {
+            display: flex; justify-content: center; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap;
+        }
+        .nav-btn-wood {
+            background: linear-gradient(to bottom, #6d4c41, #4e342e);
+            border: 2px solid #3e2723;
+            color: #fcd34d;
+            padding: 10px 20px;
+            font-family: 'Georgia', serif; font-weight: bold; font-size: 1rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            cursor: pointer;
+            border-radius: 4px;
+            box-shadow: 0 4px 0 #281a16, 0 5px 10px rgba(0,0,0,0.3);
+            transition: all 0.1s;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .nav-btn-wood:active { transform: translateY(4px); box-shadow: 0 0 0 #281a16; }
+        .nav-btn-wood:hover { background: linear-gradient(to bottom, #7d5c51, #5e443e); color: #fff; border-color: #fcd34d; }
+        .nav-btn-wood.active { background: linear-gradient(to bottom, #fcd34d, #f59e0b); color: #3e2723; text-shadow: none; border-color: #fff; box-shadow: 0 4px 0 #b45309; }
+
+        /* Elementos del Header (Buscador, Guardianes) */
+        .header-title-area { display: flex; align-items: flex-end; justify-content: space-between; width: 100%; margin-bottom: 0.5rem; position: relative; }
+        .header-title h1 {
+            font-size: 2rem; font-weight: 900; font-family: 'Georgia', serif;
+            color: #fcd34d; letter-spacing: 2px; margin: 0; text-align: center; width: 100%;
+            text-shadow: 2px 2px 0px #281a16;
+        }
+        .center-wrapper { max-width: 600px; width: 100%; text-align: center; position: relative; margin: 0 auto 1rem auto; z-index: 5; }
+        .search-with-stars { display: flex; align-items: center; gap: 0.75rem; width: 100%; margin: 0 auto; }
+        .search-star { width: 2.5rem; height: 2.5rem; filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3)); flex-shrink: 0; }
+        .search-input {
+            padding: 0.75rem 1rem; border-radius: 0.5rem; border: 2px solid #f59e0b;
+            background: white; color: #78350f; font-size: 1rem; width: 100%;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .guardians-container { display: flex; align-items: flex-end; gap: 0; position: relative; z-index: 2; }
+        .guardian-shisa { width: 9rem; height: 10.5rem; filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.4)); }
+        .guardian-statue { width: 7.5rem; height: 10.5rem; filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.4)); }
+        
+        /* --- SECTIONS --- */
+        .app-section { display: none; width: 100%; }
+        .app-section.active { display: block; }
+
+        /* =========================================
+           CSS BIBLIOTECA (HEREDADO)
+           ========================================= */
+        main.library-mode { flex: 1; max-width: 1400px; margin: 0 auto; padding: 2rem 1rem; width: 100%; position: relative; }
+        .library-frame { position: relative; background: linear-gradient(to bottom, var(--wood-light), var(--wood-dark)); border-radius: 1rem; padding: 1rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); width: 100%; border: 2px solid #4e342e; }
+        .library-inner { position: relative; background: linear-gradient(to bottom, #5d4037, #4e342e); border-radius: 0.75rem; padding: 1.5rem; box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.2); width: 100%; border: 1px solid #3e2723; }
+        .library-molding { position: absolute; left: 0; right: 0; height: 1rem; background: linear-gradient(to bottom, #6d4c41, #5d4037); }
+        .library-molding.top { top: 0; border-radius: 0.75rem 0.75rem 0 0; }
+        .library-molding.bottom { bottom: 0; border-radius: 0 0 0.75rem 0.75rem; }
+        
+        .bookshelf { margin-bottom: 1.5rem; }
+        .bookshelf-bg { background: transparent; border-radius: 0.5rem; padding: 1.5rem; min-height: 200px; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3); position: relative; overflow: hidden; }
+        .books-container { display: flex; align-items: flex-end; justify-content: center; gap: 0.25rem; min-height: 160px; padding-bottom: 0.75rem; flex-wrap: wrap; }
+        .shelf-board { height: 1.5rem; background: linear-gradient(to bottom, #6d4c41, #4e342e); border-radius: 0.125rem; box-shadow: 0 6px 10px rgba(0, 0, 0, 0.6); border-top: 1px solid rgba(255,255,255,0.1); position: relative; z-index: 1; }
+        
+        .book { position: relative; width: 2.5rem; height: 10rem; border-radius: 0.125rem; background: #8B4513; box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.4), inset 1px 1px 2px rgba(255, 255, 255, 0.1); transform: translateY(0); transition: all 0.3s ease; cursor: pointer; overflow: hidden; z-index: 5; }
+        .book:hover { transform: translateY(-4px) scale(1.05); box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.5); }
+        .book-spine { position: absolute; left: 0; top: 0; bottom: 0; width: 0.5rem; background: rgba(0, 0, 0, 0.2); }
+        .book-label { position: absolute; right: 0.25rem; top: 50%; transform: translateY(-50%); width: 1.25rem; text-align: center; }
+        .book-label-text { font-size: 0.5rem; color: rgba(255, 255, 255, 0.8); font-weight: bold; line-height: 1.2; display: flex; align-items: center; justify-content: center; height: 100%; writing-mode: vertical-rl; transform: rotate(180deg); }
+
+        .special-book { position: relative; width: 4rem; height: 10rem; border-radius: 0.125rem; background: #8B4513; cursor: pointer; z-index: 5; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-decoration: none; box-shadow: 2px 2px 8px rgba(0,0,0,0.4); }
+        .special-book-label { font-size: 0.75rem; font-weight: bold; text-align: center; transform: rotate(-180deg); writing-mode: vertical-rl; height: 70%; overflow: hidden; }
+
+        footer { background: linear-gradient(to right, var(--wood-light), #92400e, var(--wood-light)); box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.3); padding: 1.5rem; margin-bottom: 50px; border-top: 4px solid #281a16; text-align: center; }
+        .footer-btn { background: var(--wood-light); color: #fcd34d; border: 2px solid #281a16; padding: 10px 20px; border-radius: 0.5rem; font-family: 'Georgia', serif; cursor: pointer; margin: 0 5px; }
+
+        /* =========================================
+           CSS RED SOCIAL (ARBOlAPP)
+           ========================================= */
+        .app-layout {
+            display: grid;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            height: 100vh;
+            max-width: 1600px; margin: 0 auto;
+            background-color: rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .sidebar {
+            background-color: var(--wood-light);
+            border-right: 5px solid var(--leaf-green);
+            display: flex; flex-direction: column; height: 100%; z-index: 20;
+        }
+        .sidebar-header { background-color: var(--leaf-green); padding: 20px; text-align: center; border-bottom: 4px solid var(--flower-pink); }
+        .sidebar-header h2 { margin: 0; font-size: 1.2rem; color: white; }
+        .sidebar-tabs { display: flex; background: #1b5e20; }
+        .tab-btn { flex: 1; background: none; border: none; color: #a5d6a7; padding: 15px 0; cursor: pointer; font-weight: bold; border-bottom: 3px solid transparent; transition: 0.3s; }
+        .tab-btn.active { background: var(--wood-light); color: var(--text-parchment); border-bottom-color: var(--flower-pink); }
+        .sidebar-content { padding: 20px; overflow-y: auto; flex-grow: 1; }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: #ffcc80; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; background: #3e2723; border: 1px solid #795548; color: #efebe9; border-radius: 4px; font-family: inherit; box-sizing: border-box; }
+        .btn-action { width: 100%; padding: 12px; background: var(--flower-pink); color: white; border: none; border-radius: 5px; font-size: 1rem; cursor: pointer; font-weight: bold; margin-bottom: 10px; }
+        .btn-action:hover { background: #c2185b; }
+        .btn-secondary { width: 100%; padding: 10px; background: #5d4037; color: white; border: 1px solid #8d6e63; border-radius: 5px; cursor: pointer; }
+
+        .main-feed { background-color: rgba(62, 39, 35, 0.95); overflow-y: auto; height: 100vh; border-left: 8px solid var(--wood-dark); position: relative; }
+        .tree-trunk { max-width: 700px; margin: 0 auto; min-height: 100vh; border-left: 8px solid var(--leaf-green); border-right: 8px solid var(--leaf-green); box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .feed-header { background-color: var(--leaf-green); padding: 15px 20px; text-align: center; border-bottom: 5px solid var(--leaf-light); position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center;}
+        .nav-branches { display: flex; justify-content: center; background: #2e7d32; }
+        .nav-btn { background: none; border: none; color: white; padding: 15px 30px; font-size: 1.1rem; font-weight: bold; cursor: pointer; border-bottom: 4px solid transparent; }
+        .nav-btn.active { border-bottom-color: var(--flower-pink); background-color: rgba(0,0,0,0.1); }
+        
+        .leaf-card { background-color: var(--wood-light); border-radius: 5px 30px 5px 30px; padding: 20px; margin: 20px; border: 2px solid var(--border-stem); position: relative; box-shadow: 5px 5px 0px rgba(0,0,0,0.2); }
+        .leaf-card::before { content: '🌿'; position: absolute; top: -15px; left: -10px; font-size: 1.5rem; transform: rotate(-20deg); }
+        .post-meta { font-size: 0.8rem; color: #a5d6a7; margin-bottom: 10px; border-bottom: 1px dashed #795548; padding-bottom: 5px; display: flex; justify-content: space-between; }
+        .post-title { font-size: 1.5rem; margin: 0 0 10px 0; color: #ffcc80; }
+        .post-content { line-height: 1.6; font-size: 1rem; white-space: pre-wrap; word-wrap: break-word; }
+        .media-container { margin-top: 15px; border-radius: 10px; overflow: hidden; border: 3px solid #3e27d3; background: #000; max-height: 400px; display: flex; justify-content: center; }
+        .media-container img, .media-container video { max-width: 100%; max-height: 100%; object-fit: contain; }
+        
+        /* =========================================
+           CSS LECTOR (READER)
+           ========================================= */
+        .reader-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 3000; flex-direction: column; }
+        .reader-modal.active { display: flex; }
+        .wood-panel { background: linear-gradient(to bottom, #451a03, #78350f, #451a03); border-bottom: 4px solid #281a16; padding: 10px; color: #fcd34d; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .reader-desk { flex: 1; overflow-y: auto; display: flex; justify-content: center; padding: 20px; background: radial-gradient(circle, #2d1b15, #1a0f0a); }
+        .paper-sheet { position: relative; background: white; width: 100%; max-width: 900px; height: 100%; min-height: 100vh; border: 1px solid #ccc; flex-shrink: 0; }
+        #pdf-iframe { width: 100%; height: 100%; border: none; }
+
+        /* =========================================
+           CSS P2P MODAL
+           ========================================= */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .p2p-box { background: var(--wood-light); padding: 20px; border-radius: 10px; width: 90%; max-width: 600px; border: 2px solid var(--leaf-green); color: #fff; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        .p2p-log { background: #000; color: #0f0; padding: 10px; font-family: monospace; height: 60px; overflow-y: auto; margin-bottom: 10px; font-size: 0.8rem; }
+        .chat-window { background: #000; color: #fff; height: 200px; overflow-y: auto; padding: 10px; margin-bottom: 10px; border: 1px solid #555; }
+        .msg-sent { background: var(--leaf-green); padding: 5px 10px; border-radius: 5px; margin-bottom: 5px; text-align: right; }
+        .msg-received { background: #555; padding: 5px 10px; border-radius: 5px; margin-bottom: 5px; }
+
+        /* Utilidades */
+        .hidden { display: none !important; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 20px; z-index: 5000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .toast.show { opacity: 1; }
+
+    </style>
+</head>
+<body class="mode-library">
+
+    <!-- Header Unificado -->
+    <header>
+        <div class="header-content">
+            <div class="nav-bar-wood">
+                <button onclick="app.navigate('library')" id="nav-library" class="nav-btn-wood active"><i>📚</i> Biblioteca</button>
+                <button onclick="app.navigate('social')" id="nav-social" class="nav-btn-wood"><i>🍃</i> Red Social</button>
+                <button onclick="app.navigate('p2p')" id="nav-p2p" class="nav-btn-wood"><i>🔒</i> Chat P2P</button>
+            </div>
+
+            <div class="header-title-area" id="library-header-ui">
+                <div class="center-wrapper">
+                    <h1>ArbolApp - Ultimate Wood</h1>
+                    <div class="search-with-stars">
+                        <svg class="search-star" viewBox="0 0 100 100"><polygon points="50,5 61,40 98,40 69,55 80,90 50,75 20,90 31,55 2,40 39,40" fill="gold" stroke="#B8860B" stroke-width="2" /></svg>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Buscar libro...">
+                        <svg class="search-star" viewBox="0 0 100 100"><polygon points="50,5 61,40 98,40 69,55 80,90 50,75 20,90 31,55 2,40 39,40" fill="red" stroke="#7F1D1D" stroke-width="2" /></svg>
+                    </div>
+                </div>
+                <!-- Guardianes decorativos -->
+                <div class="guardians-container" style="position: absolute; left: 10px; bottom: -20px;">
+                    <img class="guardian-shisa" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMOuhV-r33EeG4zUxRL3zGHfM4dSlG4YDrTg&s" />
+                    <img class="guardian-statue" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTxJHUlDF4_7mwDAtfC5hLyENEtVIXyFE4FDg&s" />
+                </div>
+                <div class="guardians-container" style="position: absolute; right: 10px; bottom: -20px;">
+                    <img class="guardian-statue" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR8AyBlti_G6jkGC1lKWl3dNU1aqPrQyryoxg&s" />
+                    <img class="guardian-shisa" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQyPcpMaQW_90WDRnqapKezhV8HAMJsOnbZPA&s" />
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- SECCIÓN 1: BIBLIOTECA -->
+    <section id="section-library" class="app-section active">
+        <main class="library-mode">
+            <div class="library-frame">
+                <div class="library-inner">
+                    <div class="library-molding top"></div>
+                    <div id="bookshelvesContainer"></div>
+                    <div class="library-molding bottom"></div>
+                </div>
+            </div>
+        </main>
+        <footer>
+            <p>📚 ArbolApp Integrada</p>
+            <button onclick="libraryManager.addNewBook()" class="footer-btn">➕ Agregar Libro</button>
+            <button onclick="libraryManager.downloadJSON()" class="footer-btn">💾 Descargar Documentos (.json)</button>
+        </footer>
+    </section>
+
+    <!-- SECCIÓN 2: RED SOCIAL -->
+    <section id="section-social" class="app-section">
+        <div class="app-layout">
+            <aside class="sidebar">
+                <div class="sidebar-header"><h2>🌱 ArbolApp</h2></div>
+                <div class="sidebar-tabs">
+                    <button onclick="socialManager.switchTab('editor')" class="tab-btn active">✏️ Escribir</button>
+                    <button onclick="socialManager.switchTab('data')" class="tab-btn">💾 Datos</button>
+                </div>
+                <div id="tab-editor" class="sidebar-content">
+                    <div class="form-group"><label>Título</label><input type="text" id="post-title"></div>
+                    <div class="form-group"><label>Contenido</label><textarea id="post-content" rows="4"></textarea></div>
+                    <div class="form-group"><label>Archivo (en /media/)</label><input type="text" id="post-media" placeholder="ej: imagen.jpg"></div>
+                    <div class="form-group"><label>Tipo</label>
+                        <select id="post-type">
+                            <option value="image">Imagen</option>
+                            <option value="video">Video</option>
+                            <option value="audio">Audio</option>
+                            <option value="document">PDF</option>
+                            <option value="none">Solo Texto</option>
+                        </select>
+                    </div>
+                    <button onclick="socialManager.publish()" class="btn-action">🌱 Publicar</button>
+                </div>
+                <div id="tab-data" class="sidebar-content hidden">
+                    <p style="font-size:0.8rem; color:#ccc; margin-bottom:10px;">
+                        Los posts se guardan localmente. Exporta el JSON para hacerlos persistentes en GitHub.
+                    </p>
+                    <button onclick="socialManager.exportPosts()" class="btn-action">⬇️ Descargar posts.json</button>
+                    <button onclick="socialManager.clearLocal()" class="btn-secondary">🗑️ Borrar local</button>
+                </div>
+            </aside>
+            <main class="main-feed">
+                <div class="tree-trunk">
+                    <header class="feed-header">
+                        <h1>🌳 Muro Social</h1>
+                    </header>
+                    <nav class="nav-branches">
+                        <button onclick="socialManager.loadFeed('my')" class="nav-btn active">Mis Hojas</button>
+                        <button onclick="socialManager.loadFeed('external')" class="nav-btn">Ramas RSS</button>
+                    </nav>
+                    <div id="feed-container"></div>
+                </div>
+            </main>
+        </div>
+    </section>
+
+    <!-- SECCIÓN 3: CHAT P2P -->
+    <section id="section-p2p" class="app-section">
+        <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--wood-dark); color: white;">
+            <h1 style="margin-bottom: 20px;">Configuración P2P</h1>
+            <div class="p2p-box" style="max-width: 400px; text-align: center;">
+                <p>Tu ID: <strong id="my-peer-id-display" style="color: gold;">...</strong></p>
+                <button onclick="document.getElementById('my-peer-id-display').select(); document.execCommand('copy')" style="margin: 10px 0; padding: 5px;">Copiar ID</button>
+                <hr style="border-color: #555; margin: 20px 0;">
+                <input type="text" id="remote-id" placeholder="ID del amigo..." style="width: 100%; margin-bottom: 10px; padding: 10px;">
+                <button onclick="p2pManager.connect()" class="btn-action">📞 Conectar</button>
+                <div class="p2p-log" id="p2p-log">Sistema listo...</div>
+                <div class="chat-window" id="p2p-chat"></div>
+                <input type="text" id="p2p-msg" placeholder="Mensaje..." style="width: 100%; padding: 10px; margin-top: 10px;" onkeypress="if(event.key==='Enter') p2pManager.send()">
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL LECTOR -->
+    <div id="reader-modal" class="reader-modal">
+        <div class="wood-panel">
+            <button onclick="readerManager.close()" style="background:none; border:none; color:inherit; cursor:pointer; font-size:1.5rem;">&times;</button>
+            <h3>Lector de Documentos</h3>
+        </div>
+        <div class="reader-desk">
+            <div class="paper-sheet">
+                <iframe id="pdf-iframe" src=""></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast" class="toast">Mensaje</div>
+
+    <!-- 1. CARGA CONFIGURACIÓN P2P -->
+    <script src="p2p-config.js"></script>
+
+    <!-- 2. LÓGICA PRINCIPAL -->
+    <script>
+        // ===========================================
+        // DATOS DE RESPALDO (SI FALLA LA CARGA)
+        // ===========================================
+        const DEFAULT_BOOKS = [
+            { id: 1, title: 'Ejemplo PDF Local', author: 'Usuario', year: 2024, color: '#D2691E', pdfUrl: 'media/documentos/ejemplo.pdf' }, // Asegúrate de poner un PDF real aquí
+            { id: 2, title: 'Sutra del Diamante', author: 'Buda', year: -400, color: '#9acd32', pdfUrl: 'https://www.lastelladelmattino.org/wp-content/uploads/2010/04/El-diamante_parte-budista-completa_F.pdf' },
+            { id: 3, title: 'Manual de Permacultura', author: 'FAO', year: 2018, color: '#2E8B57', pdfUrl: 'https://www.fao.org/4/ah501s/ah501s.pdf' }
+        ];
+
+        const DEFAULT_POSTS = [
+            { id: 1, date: "2023-10-27T10:00:00", title: "Bienvenidos a Árbol", content: "Este es el espacio integrado.", media: "", type: "none" },
+            { id: 4, date: "2023-10-30T16:45:00", title: "Manifiesto Digital", content: "Documento sobre descentralización.", media: "manifiesto.pdf", type: "document" }
+        ];
+
+        // ===========================================
+        // APP MANAGER (NAVEGACIÓN)
+        // ===========================================
+        const app = {
+            navigate: (section) => {
+                // Reset UI
+                document.querySelectorAll('.app-section').forEach(el => el.classList.remove('active'));
+                document.querySelectorAll('.nav-btn-wood').forEach(el => el.classList.remove('active'));
+                
+                // Show Section
+                document.getElementById(`section-${section}`).classList.add('active');
+                document.getElementById(`nav-${section}`).classList.add('active');
+
+                // Handle Body Modes for Layout
+                const body = document.body;
+                if (section === 'social') {
+                    body.classList.remove('mode-library');
+                    body.classList.add('mode-social');
+                } else {
+                    body.classList.remove('mode-social');
+                    body.classList.add('mode-library');
+                }
+            }
+        };
+
+        // ===========================================
+        // LIBRARY MANAGER
+        // ===========================================
+        const libraryManager = {
+            data: [],
+            
+            init: async () => {
+                try {
+                    const res = await fetch('documentos/documentos.json');
+                    if (res.ok) {
+                        libraryManager.data = await res.json();
+                        console.log("Libros cargados desde documentos.json");
+                    } else {
+                        throw new Error("Error HTTP");
+                    }
+                } catch (e) {
+                    console.warn("No se pudo cargar documentos.json, usando defaults.", e);
+                    libraryManager.data = [...DEFAULT_BOOKS];
+                }
+                libraryManager.render();
+                
+                // Buscador
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    const term = e.target.value.toLowerCase();
+                    const filtered = libraryManager.data.filter(b => b.title.toLowerCase().includes(term) || b.author.toLowerCase().includes(term));
+                    libraryManager.render(filtered);
+                });
+            },
+
+            render: (books = libraryManager.data) => {
+                const container = document.getElementById('bookshelvesContainer');
+                container.innerHTML = '';
+                
+                // Generar estantes
+                const booksPerShelf = 6;
+                for (let i = 0; i < books.length; i += booksPerShelf) {
+                    const shelfBooks = books.slice(i, i + booksPerShelf);
+                    
+                    const shelfDiv = document.createElement('div');
+                    shelfDiv.className = 'bookshelf';
+                    
+                    let booksHtml = '';
+                    shelfBooks.forEach(book => {
+                        booksHtml += `
+                            <div class="book" style="background-color: ${book.color};" onclick="readerManager.open('${book.pdfUrl}', '${book.title}')">
+                                <div class="book-spine"></div>
+                                <div class="book-label">
+                                    <div class="book-label-text">${book.title.substring(0, 15)}...</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    shelfDiv.innerHTML = `
+                        <div class="bookshelf-bg">
+                            <div class="books-container">${booksHtml}</div>
+                        </div>
+                        <div class="shelf-board"></div>
+                    `;
+                    container.appendChild(shelfDiv);
+                }
+            },
+
+            addNewBook: () => {
+                const title = prompt("Título del libro:");
+                const author = prompt("Autor:");
+                const url = prompt("URL o ruta (media/archivo.pdf):");
+                if(title && url) {
+                    libraryManager.data.push({
+                        id: Date.now(), title, author, year: new Date().getFullYear(),
+                        color: '#556B2F', pdfUrl: url
+                    });
+                    libraryManager.render();
+                    showToast("Libro agregado a la sesión local");
+                }
+            },
+
+            downloadJSON: () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(libraryManager.data, null, 2));
+                const node = document.createElement('a');
+                node.setAttribute("href", dataStr);
+                node.setAttribute("download", "documentos.json");
+                document.body.appendChild(node);
+                node.click();
+                node.remove();
+                showToast("Archivo documentos.json descargado. Súbelo a la carpeta /documentos en GitHub.");
+            }
+        };
+
+        // ===========================================
+        // READER MANAGER
+        // ===========================================
+        const readerManager = {
+            open: (url, title) => {
+                // Si la url no empieza con http, asumimos que es un archivo local relativo
+                // Pero para iframe, a veces necesitas la ruta absoluta o correcta.
+                // Para este ejemplo, confiamos en que el usuario ponga la ruta correcta en el JSON (ej: media/archivo.pdf)
+                
+                // Si es un video de youtube, abrimos nueva pestaña
+                if(url.includes('youtube')) {
+                    window.open(url, '_blank');
+                    return;
+                }
+
+                const modal = document.getElementById('reader-modal');
+                const iframe = document.getElementById('pdf-iframe');
+                
+                // Forzar carga del visor PDF de Google para mejor compatibilidad
+                // Si es un archivo local, el visor de Google a veces falla por CORS, así que probamos directo primero.
+                if (url.startsWith('http')) {
+                     iframe.src = `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`;
+                } else {
+                     iframe.src = url;
+                }
+                
+                modal.classList.add('active');
+            },
+            close: () => {
+                document.getElementById('reader-modal').classList.remove('active');
+                document.getElementById('pdf-iframe').src = '';
+            }
+        };
+
+        // ===========================================
+        // SOCIAL MANAGER
+        // ===========================================
+        const socialManager = {
+            data: [],
+            currentTab: 'editor',
+
+            init: async () => {
+                try {
+                    const res = await fetch('social/posts.json');
+                    if (res.ok) socialManager.data = await res.json();
+                    else throw new Error("Fail");
+                } catch (e) {
+                    console.warn("Cargando posts por defecto");
+                    // Cargar de localStorage primero si hay
+                    const local = localStorage.getItem('arbolapp_posts');
+                    if(local) socialManager.data = JSON.parse(local);
+                    else socialManager.data = [...DEFAULT_POSTS];
+                }
+                socialManager.loadFeed('my');
+            },
+
+            switchTab: (tab) => {
+                document.querySelectorAll('.sidebar-content').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            },
+
+            publish: () => {
+                const title = document.getElementById('post-title').value;
+                const content = document.getElementById('post-content').value;
+                const media = document.getElementById('post-media').value;
+                const type = document.getElementById('post-type').value;
+
+                if(!title || !content) return showToast("Falta título o contenido");
+
+                const newPost = {
+                    id: Date.now(), date: new Date().toISOString(), title, content, media, type
+                };
+
+                // Guardar en local y en memoria
+                socialManager.data.unshift(newPost);
+                const localPosts = JSON.parse(localStorage.getItem('arbolapp_posts') || '[]');
+                localPosts.unshift(newPost);
+                localStorage.setItem('arbolapp_posts', JSON.stringify(localPosts));
+
+                showToast("Hoja publicada");
+                document.getElementById('post-title').value = '';
+                document.getElementById('post-content').value = '';
+                socialManager.loadFeed('my');
+            },
+
+            loadFeed: (type) => {
+                const container = document.getElementById('feed-container');
+                container.innerHTML = '';
+                
+                let source = [];
+                if (type === 'my') {
+                    source = socialManager.data;
+                } else {
+                    // Simulación de RSS externo (En una app real usaríamos fetch a rss2json)
+                    showToast("Cargando ramas externas (Simulación)...");
+                    source = [...DEFAULT_POSTS]; // Usar defaults como ejemplo
+                }
+
+                source.forEach(post => {
+                    let mediaHtml = '';
+                    if(post.media && post.type !== 'none') {
+                        const path = post.media.startsWith('http') ? post.media : `media/${post.media}`;
+                        
+                        if(post.type === 'image') mediaHtml = `<div class="media-container"><img src="${path}"></div>`;
+                        else if(post.type === 'video') mediaHtml = `<div class="media-container"><video controls src="${path}"></video></div>`;
+                        else if(post.type === 'document') mediaHtml = `<div style="padding:10px; border:1px solid #aaa; background:#eee; color:#333; margin-top:10px; border-radius:5px;">📄 Documento adjunto: <a href="${path}" target="_blank" style="color:blue;">${post.media}</a> <button onclick="readerManager.open('${path}', 'Documento')" style="margin-left:10px; cursor:pointer;">👀 Leer</button></div>`;
+                    }
+
+                    const div = document.createElement('div');
+                    div.className = 'leaf-card';
+                    div.innerHTML = `
+                        <div class="post-meta">
+                            <span>${new Date(post.date).toLocaleDateString()}</span>
+                            <span>${type === 'my' ? '✏️ Propio' : '🌳 Externo'}</span>
+                        </div>
+                        <h3 class="post-title">${post.title}</h3>
+                        <div class="post-content">${post.content}</div>
+                        ${mediaHtml}
+                    `;
+                    container.appendChild(div);
+                });
+            },
+
+            exportPosts: () => {
+                // Combina locales y predeterminados
+                const allPosts = [...DEFAULT_POSTS, ...JSON.parse(localStorage.getItem('arbolapp_posts') || '[]')];
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allPosts, null, 2));
+                const node = document.createElement('a');
+                node.setAttribute("href", dataStr);
+                node.setAttribute("download", "posts.json");
+                document.body.appendChild(node);
+                node.click();
+                node.remove();
+            },
+            
+            clearLocal: () => {
+                if(confirm("¿Borrar posts locales?")) {
+                    localStorage.removeItem('arbolapp_posts');
+                    socialManager.data = [...DEFAULT_POSTS];
+                    socialManager.loadFeed('my');
+                }
+            }
+        };
+
+        // ===========================================
+        // P2P MANAGER
+        // ===========================================
+        const p2pManager = {
+            peer: null,
+            conn: null,
+
+            init: () => {
+                // Usar la config cargada de p2p-config.js o fallback
+                const config = (typeof P2P_CONFIG !== 'undefined') ? P2P_CONFIG : {
+                    iceServers: [{ url: 'stun:stun.l.google.com:19302' }], debug: 1
+                };
+                
+                p2pManager.peer = new Peer(null, config);
+                
+                p2pManager.peer.on('open', (id) => {
+                    document.getElementById('my-peer-id-display').innerText = id;
+                    log("Conectado a la red P2P. ID: " + id);
+                });
+                
+                p2pManager.peer.on('connection', (conn) => {
+                    p2pManager.conn = conn;
+                    setupConnection(conn);
+                });
+                
+                p2pManager.peer.on('error', (err) => log("Error P2P: " + err.type));
+            },
+
+            connect: () => {
+                const destId = document.getElementById('remote-id').value;
+                if(!destId) return alert("Ingresa ID remoto");
+                
+                p2pManager.conn = p2pManager.peer.connect(destId);
+                p2pManager.conn.on('open', () => {
+                    log("Conexión establecida con " + destId);
+                    setupConnection(p2pManager.conn);
+                });
+            },
+
+            send: () => {
+                const input = document.getElementById('p2p-msg');
+                const text = input.value;
+                if(!text || !p2pManager.conn) return;
+                
+                p2pManager.conn.send(text);
+                addChatMessage("Yo: " + text, true);
+                input.value = '';
+            }
+        };
+
+        function setupConnection(conn) {
+            conn.on('data', (data) => {
+                addChatMessage("Amigo: " + data, false);
+            });
+            conn.on('close', () => log("Conexión cerrada"));
+        }
+
+        function log(msg) {
+            const el = document.getElementById('p2p-log');
+            el.innerHTML += `<div>> ${msg}</div>`;
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function addChatMessage(msg, isMine) {
+            const el = document.getElementById('p2p-chat');
+            const div = document.createElement('div');
+            div.className = isMine ? 'msg-sent' : 'msg-received';
+            div.innerText = msg;
+            el.appendChild(div);
+            el.scrollTop = el.scrollHeight;
+        }
+
+        // ===========================================
+        // UTILIDADES
+        // ===========================================
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        // ===========================================
+        // INICIALIZACIÓN
+        // ===========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            libraryManager.init();
+            socialManager.init();
+            p2pManager.init();
+        });
+
+    </script>
+</body>
+</html>
