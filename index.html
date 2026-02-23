@@ -1,1 +1,1661 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArbolApp - Biblioteca y Red Social Integrada</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    
+    <style>
+        /* =========================================
+           CSS UNIFICADO (ULTIMATE WOOD THEME)
+           ========================================= */
+        :root {
+            --wood-dark: #451a03;
+            --wood-light: #78350f;
+            --leaf-green: #2e7d32;
+            --leaf-light: #66bb6a;
+            --flower-pink: #e91e63;
+            --text-parchment: #efebe9;
+            --border-stem: #1b5e20;
+            --sidebar-width: 340px;
+        }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Georgia', serif;
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #fef3c7, #fcd34d);
+            color: var(--text-parchment);
+            overflow-x: hidden;
+            transition: overflow 0.3s ease;
+        }
+
+        body.mode-library { overflow-y: auto; }
+        body.mode-social { 
+            overflow: hidden; 
+            background: var(--wood-dark);
+            background-image: repeating-linear-gradient(45deg, #3e2723 0, #3e2723 10px, #4e342e 10px, #4e342e 20px);
+            color: var(--text-parchment);
+            height: 100vh;
+        }
+
+        /* --- HEADER & NAV --- */
+        header {
+            background: linear-gradient(to bottom, var(--wood-dark), var(--wood-light), var(--wood-dark));
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            padding: 1rem 1rem 0 1rem;
+            position: relative; width: 100%; z-index: 50;
+            border-bottom: 4px solid #281a16;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .header-content { max-width: 1600px; margin: 0 auto; width: 100%; }
+
+        .nav-bar-wood {
+            display: flex; justify-content: center; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap;
+        }
+        .nav-btn-wood {
+            background: linear-gradient(to bottom, #6d4c41, #4e342e);
+            border: 2px solid #3e2723;
+            color: #fcd34d;
+            padding: 10px 20px;
+            font-family: 'Georgia', serif; font-weight: bold; font-size: 1rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            cursor: pointer;
+            border-radius: 4px;
+            box-shadow: 0 4px 0 #281a16, 0 5px 10px rgba(0,0,0,0.3);
+            transition: all 0.1s;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .nav-btn-wood:active { transform: translateY(4px); box-shadow: 0 0 0 #281a16; }
+        .nav-btn-wood:hover { background: linear-gradient(to bottom, #7d5c51, #5e443e); color: #fff; border-color: #fcd34d; }
+        .nav-btn-wood.active { background: linear-gradient(to bottom, #fcd34d, #f59e0b); color: #3e2723; text-shadow: none; border-color: #fff; box-shadow: 0 4px 0 #b45309; }
+
+        .header-title-area { display: flex; align-items: flex-end; justify-content: space-between; width: 100%; margin-bottom: 0.5rem; position: relative; }
+        .header-title h1 {
+            font-size: 2rem; font-weight: 900; font-family: 'Georgia', serif;
+            color: #fcd34d; letter-spacing: 2px; margin: 0; text-align: center; width: 100%;
+            text-shadow: 2px 2px 0px #281a16;
+        }
+        .center-wrapper { max-width: 600px; width: 100%; text-align: center; position: relative; margin: 0 auto 1rem auto; z-index: 5; }
+        .search-with-stars { display: flex; align-items: center; gap: 0.75rem; width: 100%; margin: 0 auto; }
+        .search-star { width: 2.5rem; height: 2.5rem; filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3)); flex-shrink: 0; }
+        .search-input {
+            padding: 0.75rem 1rem; border-radius: 0.5rem; border: 2px solid #f59e0b;
+            background: white; color: #78350f; font-size: 1rem; width: 100%;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .guardians-container { display: flex; align-items: flex-end; gap: 0; position: relative; z-index: 2; }
+        .guardian-shisa { width: 9rem; height: 10.5rem; filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.4)); }
+        .guardian-statue { width: 7.5rem; height: 10.5rem; filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.4)); }
+        
+        @media (min-width: 768px) {
+            .guardian-statue { width: 9rem; height: 12rem; }
+            .guardian-shisa { width: 11rem; height: 12rem; }
+        }
+        
+        /* --- SECTIONS --- */
+        .app-section { display: none; width: 100%; }
+        .app-section.active { display: block; }
+
+        /* =========================================
+           CSS BIBLIOTECA (HEREDADO COMPLETO)
+           ========================================= */
+        main.library-mode { flex: 1; max-width: 1400px; margin: 0 auto; padding: 2rem 1rem; width: 100%; position: relative; }
+        .library-frame { position: relative; background: linear-gradient(to bottom, var(--wood-light), var(--wood-dark)); border-radius: 1rem; padding: 1rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); width: 100%; border: 2px solid #4e342e; }
+        .library-inner { position: relative; background: linear-gradient(to bottom, #5d4037, #4e342e); border-radius: 0.75rem; padding: 1.5rem; box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.2); width: 100%; border: 1px solid #3e2723; }
+        .library-molding { position: absolute; left: 0; right: 0; height: 1rem; background: linear-gradient(to bottom, #6d4c41, #5d4037); }
+        .library-molding.top { top: 0; border-radius: 0.75rem 0.75rem 0 0; }
+        .library-molding.bottom { bottom: 0; border-radius: 0 0 0.75rem 0.75rem; }
+        
+        .bookshelf { margin-bottom: 1.5rem; }
+        .bookshelf-bg { background: transparent; border-radius: 0.5rem; padding: 1.5rem; min-height: 200px; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3); position: relative; overflow: hidden; }
+        .books-container { display: flex; align-items: flex-end; justify-content: center; gap: 0.25rem; min-height: 160px; padding-bottom: 0.75rem; flex-wrap: wrap; }
+        .books-container.align-left { justify-content: flex-start; padding-left: 0.5rem; }
+        .books-container.align-right { justify-content: flex-end; padding-right: 0.5rem; }
+        .shelf-board { height: 1.5rem; background: linear-gradient(to bottom, #6d4c41, #4e342e); border-radius: 0.125rem; box-shadow: 0 6px 10px rgba(0, 0, 0, 0.6); border-top: 1px solid rgba(255,255,255,0.1); position: relative; z-index: 1; }
+        
+        .book { position: relative; width: 2.5rem; height: 10rem; border-radius: 0.125rem; background: #8B4513; box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.4), inset 1px 1px 2px rgba(255, 255, 255, 0.1); transform: translateY(0); transition: all 0.3s ease; cursor: pointer; overflow: hidden; z-index: 5; border: none; }
+        .book:hover { transform: translateY(-4px) scale(1.05); box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.5); }
+        .book-spine { position: absolute; left: 0; top: 0; bottom: 0; width: 0.5rem; background: rgba(0, 0, 0, 0.2); }
+        .book-texture { position: absolute; inset: 0; background: linear-gradient(to right, rgba(0, 0, 0, 0.3), transparent); }
+        .book-decoration { position: absolute; left: 0.125rem; top: 0.5rem; bottom: 0.5rem; display: flex; flex-direction: column; justify-content: space-between; }
+        .book-line { width: 0.25rem; height: 0.125rem; background: rgba(255, 255, 255, 0.2); }
+        .book-label { position: absolute; right: 0.25rem; top: 50%; transform: translateY(-50%); width: 1.25rem; text-align: center; }
+        .book-label-text { font-size: 0.5rem; color: rgba(255, 255, 255, 0.8); font-weight: bold; line-height: 1.2; writing-mode: vertical-rl; transform: rotate(180deg); display: flex; align-items: center; justify-content: center; height: 100%; }
+        .book-label-author { font-size: 0.4rem; color: rgba(255, 255, 255, 0.6); margin-top: 0.125rem; }
+
+        .special-book { position: relative; width: 4rem; height: 10rem; border-radius: 0.125rem; background: #8B4513; cursor: pointer; z-index: 5; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-decoration: none; box-shadow: 2px 2px 8px rgba(0,0,0,0.4); overflow: visible; }
+        .special-book:hover { transform: translateY(-4px) scale(1.05); box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.5); }
+        .special-book-texture { position: absolute; inset: 0; background: linear-gradient(to right, rgba(0, 0, 0, 0.3), transparent); }
+        .special-book-decoration { position: absolute; left: 0.25rem; top: 0.5rem; bottom: 0.5rem; display: flex; flex-direction: column; justify-content: space-between; }
+        .special-book-line { width: 0.25rem; height: 0.125rem; background: rgba(255, 255, 255, 0.2); }
+        .special-book-label { position: absolute; right: 0.5rem; top: 15%; transform: rotate(-180deg); font-size: 0.75rem; color: white; font-weight: bold; letter-spacing: 0.1em; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8); line-height: 1.2; writing-mode: vertical-rl; text-orientation: mixed; height: 70%; overflow: hidden; }
+
+        /* Insectos */
+        .butterfly { position: absolute; top: 10px; right: -5px; width: 24px; height: 20px; z-index: 20; pointer-events: none; }
+        .butterfly-wing { position: absolute; top: 0; width: 12px; height: 18px; background: rgba(147, 51, 234, 0.7); border-radius: 50% 50% 0 50%; animation: flutter 0.15s infinite alternate; }
+        .butterfly.blue .butterfly-wing { background: rgba(59, 130, 246, 0.7); }
+        .butterfly.yellow .butterfly-wing { background: rgba(234, 179, 8, 0.7); }
+        .butterfly-wing.left { left: 0; transform-origin: right center; }
+        .butterfly-wing.right { right: 0; transform-origin: left center; transform: scaleX(-1); }
+        @keyframes flutter { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(60deg); } }
+
+        .ladybug-container { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 16px; height: 14px; z-index: 20; transform-style: preserve-3d; perspective: 50px; }
+        .ladybug-head { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 10px; height: 5px; background: black; border-radius: 5px; z-index: 30; }
+        .ladybug-wing-under { position: absolute; top: 2px; bottom: 2px; width: 40%; background: rgba(0, 0, 0, 0.5); border-radius: 50%; z-index: 10; animation: flutterWings 0.1s infinite alternate; }
+        .ladybug-wing-under.left { left: 10%; transform-origin: right center; }
+        .ladybug-wing-under.right { right: 10%; transform-origin: left center; }
+        @keyframes flutterWings { 0% { transform: rotateY(-10deg); } 100% { transform: rotateY(10deg); } }
+        .ladybug-shell { position: absolute; top: 0; bottom: 0; width: 50%; background: radial-gradient(circle at 30% 30%, #ef4444, #b91c1c); z-index: 20; animation: openShell 1.5s infinite ease-in-out alternate; }
+        .ladybug-shell.left { left: 0; border-radius: 8px 0 0 0; transform-origin: right center; }
+        .ladybug-shell.right { right: 0; border-radius: 0 8px 0 0; transform-origin: left center; }
+        .ladybug-spot-shell { position: absolute; width: 2px; height: 2px; background: black; border-radius: 50%; }
+        .ls-1 { top: 2px; right: 2px; }
+        .ls-2 { top: 5px; right: 4px; }
+        .ls-3 { top: 2px; left: 2px; }
+        .ls-4 { top: 5px; left: 4px; }
+        @keyframes openShell { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(-70deg); } }
+
+        .ladybug-walking { position: absolute; width: 8px; height: 8px; background: radial-gradient(circle at 30% 30%, #ef4444, #b91c1c); border-radius: 50%; z-index: 4; box-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
+        .ladybug-walking::before { content: ''; position: absolute; top: -2px; left: 1px; width: 5px; height: 3px; background: black; border-radius: 50%; }
+        .ladybug-walking::after { content: ''; position: absolute; top: 0; left: 50%; height: 100%; width: 1px; background: black; }
+        .ladybug-walking .spot { position: absolute; width: 1.5px; height: 1.5px; background: black; border-radius: 50%; }
+        .lw-s1 { top: 1px; left: 1px; }
+        .lw-s2 { top: 5px; left: 1px; }
+        .lw-s3 { top: 1px; right: 1px; }
+        .lw-s4 { top: 5px; right: 1px; }
+        .ladybug-walking-legs { position: absolute; bottom: -1px; left: -1px; width: 10px; height: 2px; background: transparent; }
+        .ladybug-walking-legs::before, .ladybug-walking-legs::after { content: ''; position: absolute; width: 3px; height: 2px; background: black; border-radius: 2px; }
+        .ladybug-walking-legs::before { left: 1px; animation: leg-move 0.2s infinite; }
+        .ladybug-walking-legs::after { right: 1px; animation: leg-move 0.2s infinite reverse; }
+        @keyframes leg-move { 0% { transform: rotate(0deg); } 100% { transform: rotate(20deg); } }
+
+        /* Gatos y Zorro */
+        .cat-container { position: fixed; left: -300px; bottom: 2rem; width: 150px; height: 110px; z-index: 1000; pointer-events: auto; filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3)); will-change: transform, left; cursor: pointer; }
+        .cat-container.small-cat { width: 120px; height: 88px; }
+        .facing-left { transform: scaleX(-1); }
+        .facing-right { transform: scaleX(1); }
+        .cat-svg { width: 100%; height: 100%; overflow: visible; }
+        .cat-body { fill: #fffbf0; }
+        .cat-head { fill: #fffbf0; }
+        .patch-black { fill: #2c3e50; }
+        .patch-orange { fill: #e67e22; }
+        .cat-eye { fill: #f1c40f; stroke: #2c3e50; stroke-width: 1; }
+        .cat-pupil { fill: #000; transform-box: fill-box; transform-origin: center; }
+        .eyelid { fill: #2c3e50; opacity: 0; transform-box: fill-box; transform-origin: center; }
+        .cat-nose { fill: pink; }
+        .cat-tail { fill: none; stroke: #2c3e50; stroke-width: 8; stroke-linecap: round; }
+        .cat-paw { fill: #fffbf0; stroke: #e0e0e0; stroke-width: 1; transform-origin: top center; }
+        
+        @keyframes blinkAnim { 0%, 94%, 100% { opacity: 0; transform: scaleY(1); } 97% { opacity: 1; transform: scaleY(0.1); } }
+        .cat-eye .eyelid { animation: blinkAnim 5s infinite; }
+        
+        .cat-paw.swiping { animation: swipeAnim 0.2s ease-out; }
+        @keyframes swipeAnim { 0% { transform: rotate(0deg); } 50% { transform: rotate(-45deg) translateX(-10px); } 100% { transform: rotate(0deg); } }
+
+        .baby-fox { position: fixed; width: 130px; height: 95px; z-index: 1001; pointer-events: none; filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.3)); }
+
+        footer { background: linear-gradient(to right, var(--wood-light), #92400e, var(--wood-light)); box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.3); padding: 1.5rem; margin-bottom: 50px; border-top: 4px solid #281a16; text-align: center; }
+        .footer-btn { background: var(--wood-light); color: #fcd34d; border: 2px solid #281a16; padding: 10px 20px; border-radius: 0.5rem; font-family: 'Georgia', serif; cursor: pointer; margin: 0 5px; }
+        .footer-btn:hover { background: #5d4037; }
+
+        /* =========================================
+           CSS RED SOCIAL (ARBOLAPP)
+           ========================================= */
+        .app-layout { display: grid; grid-template-columns: var(--sidebar-width) 1fr; height: 100vh; max-width: 1600px; margin: 0 auto; background-color: rgba(0,0,0,0.2); position: relative; }
+        .sidebar { background-color: var(--wood-light); border-right: 5px solid var(--leaf-green); display: flex; flex-direction: column; height: 100%; z-index: 20; }
+        .sidebar-header { background-color: var(--leaf-green); padding: 20px; text-align: center; border-bottom: 4px solid var(--flower-pink); }
+        .sidebar-header h2 { margin: 0; font-size: 1.2rem; color: white; }
+        .sidebar-tabs { display: flex; background: #1b5e20; }
+        .tab-btn { flex: 1; background: none; border: none; color: #a5d6a7; padding: 15px 0; cursor: pointer; font-weight: bold; border-bottom: 3px solid transparent; transition: 0.3s; }
+        .tab-btn.active { background: var(--wood-light); color: var(--text-parchment); border-bottom-color: var(--flower-pink); }
+        .sidebar-content { padding: 20px; overflow-y: auto; flex-grow: 1; }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: #ffcc80; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; background: #3e2723; border: 1px solid #795548; color: #efebe9; border-radius: 4px; font-family: inherit; box-sizing: border-box; }
+        .btn-action { width: 100%; padding: 12px; background: var(--flower-pink); color: white; border: none; border-radius: 5px; font-size: 1rem; cursor: pointer; font-weight: bold; margin-bottom: 10px; transition: background 0.2s; }
+        .btn-action:hover { background: #c2185b; }
+        .btn-secondary { width: 100%; padding: 10px; background: #5d4037; color: white; border: 1px solid #8d6e63; border-radius: 5px; cursor: pointer; }
+        .btn-secondary:hover { background: #4e342e; }
+
+        .main-feed { background-color: rgba(62, 39, 35, 0.95); overflow-y: auto; height: 100vh; border-left: 8px solid var(--wood-dark); position: relative; }
+        .tree-trunk { max-width: 700px; margin: 0 auto; min-height: 100vh; border-left: 8px solid var(--leaf-green); border-right: 8px solid var(--leaf-green); box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .feed-header { background-color: var(--leaf-green); padding: 15px 20px; text-align: center; border-bottom: 5px solid var(--leaf-light); position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center;}
+        .nav-branches { display: flex; justify-content: center; background: #2e7d32; }
+        .nav-btn { background: none; border: none; color: white; padding: 15px 30px; font-size: 1.1rem; font-weight: bold; cursor: pointer; border-bottom: 4px solid transparent; transition: all 0.3s; }
+        .nav-btn.active { border-bottom-color: var(--flower-pink); background-color: rgba(0,0,0,0.1); }
+        
+        .leaf-card { background-color: var(--wood-light); border-radius: 5px 30px 5px 30px; padding: 20px; margin: 20px; border: 2px solid var(--border-stem); position: relative; box-shadow: 5px 5px 0px rgba(0,0,0,0.2); transition: transform 0.2s; }
+        .leaf-card:hover { transform: translateY(-3px); }
+        .leaf-card::before { content: '🌿'; position: absolute; top: -15px; left: -10px; font-size: 1.5rem; transform: rotate(-20deg); }
+        .post-meta { font-size: 0.8rem; color: #a5d6a7; margin-bottom: 10px; border-bottom: 1px dashed #795548; padding-bottom: 5px; display: flex; justify-content: space-between; }
+        .post-title { font-size: 1.5rem; margin: 0 0 10px 0; color: #ffcc80; }
+        .post-content { line-height: 1.6; font-size: 1rem; white-space: pre-wrap; word-wrap: break-word; }
+        .media-container { margin-top: 15px; border-radius: 10px; overflow: hidden; border: 3px solid #3e27d3; background: #000; max-height: 400px; display: flex; justify-content: center; }
+        .media-container img, .media-container video { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .download-link { display: inline-block; margin-top: 10px; padding: 5px 15px; background: var(--flower-pink); color: white; text-decoration: none; border-radius: 15px; font-size: 0.9rem; }
+        
+        .source-manager { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #5d4037; }
+        .source-manager h4 { margin-top: 0; color: var(--flower-pink); font-size: 0.9rem; }
+        .input-group { display: flex; gap: 5px; margin-bottom: 10px; }
+        .input-group input { flex: 1; }
+        .loading-frog { text-align: center; padding: 20px; font-size: 3rem; }
+
+        /* =========================================
+           CSS LECTOR (READER)
+           ========================================= */
+        .reader-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 3000; flex-direction: column; }
+        .reader-modal.active { display: flex; }
+        .wood-panel { background: linear-gradient(to bottom, #451a03, #78350f, #451a03); border-bottom: 4px solid #281a16; padding: 10px; color: #fcd34d; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .reader-desk { flex: 1; overflow-y: auto; display: flex; justify-content: center; padding: 20px; background: radial-gradient(circle, #2d1b15, #1a0f0a); }
+        .paper-sheet { position: relative; background: white; width: 100%; max-width: 900px; height: 100%; min-height: 100vh; border: 1px solid #ccc; flex-shrink: 0; }
+        #pdf-iframe { width: 100%; height: 100%; border: none; }
+
+        /* =========================================
+           CSS P2P MODAL
+           ========================================= */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .p2p-box { background: var(--wood-light); padding: 20px; border-radius: 10px; width: 90%; max-width: 600px; border: 2px solid var(--leaf-green); color: #fff; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        .p2p-log { background: #000; color: #0f0; padding: 10px; font-family: monospace; height: 60px; overflow-y: auto; margin-bottom: 10px; font-size: 0.8rem; }
+        .chat-window { background: #000; color: #fff; height: 200px; overflow-y: auto; padding: 10px; margin-bottom: 10px; border: 1px solid #555; }
+        .message { margin-bottom: 10px; padding: 8px 12px; border-radius: 8px; max-width: 80%; word-wrap: break-word; }
+        .msg-sent { background: var(--leaf-green); color: white; align-self: flex-end; margin-left: auto; text-align: right; }
+        .msg-received { background: #555; color: white; align-self: flex-start; }
+        .msg-locked { background: #443300; color: #ffecb3; border: 1px solid #ffb300; font-style: italic; }
+        .msg-error { background: #511; color: #ffcccc; border: 1px solid #f00; }
+        
+        .phone-icon { font-size: 3rem; display: inline-block; margin-bottom: 5px; }
+        .phone-blue { color: #2196F3; animation: ringing 1.5s infinite ease-in-out; }
+        .phone-green { color: #4CAF50; }
+        .phone-grey { color: #795548; }
+        @keyframes ringing { 0% { transform: rotate(0deg); } 10% { transform: rotate(-15deg); } 20% { transform: rotate(15deg); } 30% { transform: rotate(-15deg); } 40% { transform: rotate(15deg); } 50% { transform: rotate(0deg); } 100% { transform: rotate(0deg); } }
+        
+        .crypto-field { background: #2a1b15; border: 1px solid #ffb300; color: #ffb300; padding: 8px; border-radius: 4px; width: 100%; margin-bottom: 5px; font-family: monospace; }
+        .crypto-label { font-size: 0.8rem; color: #ffb300; margin-bottom: 2px; display: block; }
+
+        /* Utilidades */
+        .hidden { display: none !important; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 20px; z-index: 5000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .toast.show { opacity: 1; }
+
+        @media (max-width: 900px) {
+            .app-layout { grid-template-columns: 1fr; overflow-y: auto; }
+            .sidebar { height: auto; max-height: 80vh; }
+            body { overflow: auto; }
+            .main-feed { height: auto; overflow: visible; }
+            .tree-trunk { border: none; }
+            .center-wrapper { position: static; margin-top: 1rem; }
+            .guardians-container { position: static !important; margin: 10px 0; }
+            .header-title-area { flex-direction: column; align-items: center; }
+        }
+    </style>
+<base target="_blank">
+</head>
+<body class="mode-library">
+
+    <!-- Header Unificado -->
+    <header>
+        <div class="header-content">
+            <div class="nav-bar-wood">
+                <button onclick="app.navigate('library')" id="nav-library" class="nav-btn-wood active"><i>📚</i> Biblioteca</button>
+                <button onclick="app.navigate('social')" id="nav-social" class="nav-btn-wood"><i>🍃</i> Red Social</button>
+                <button onclick="app.navigate('p2p')" id="nav-p2p" class="nav-btn-wood"><i>🔒</i> Chat P2P</button>
+            </div>
+
+            <div class="header-title-area" id="library-header-ui">
+                <div class="center-wrapper">
+                    <h1>ArbolApp - Ultimate Wood</h1>
+                    <div class="search-with-stars">
+                        <svg class="search-star" viewBox="0 0 100 100"><polygon points="50,5 61,40 98,40 69,55 80,90 50,75 20,90 31,55 2,40 39,40" fill="gold" stroke="#B8860B" stroke-width="2" /></svg>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Buscar libro...">
+                        <svg class="search-star" viewBox="0 0 100 100"><polygon points="50,5 61,40 98,40 69,55 80,90 50,75 20,90 31,55 2,40 39,40" fill="red" stroke="#7F1D1D" stroke-width="2" /></svg>
+                    </div>
+                </div>
+                
+                <!-- Guardianes decorativos -->
+                <div class="guardians-container" style="position: absolute; left: 10px; bottom: -20px;">
+                    <img class="guardian-shisa" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMOuhV-r33EeG4zUxRL3zGHfM4dSlG4YDrTg&s" alt="Shisa Izquierda" />
+                    <img class="guardian-statue" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTxJHUlDF4_7mwDAtfC5hLyENEtVIXyFE4FDg&s" alt="Maneki Neko" />
+                </div>
+                <div class="guardians-container" style="position: absolute; right: 10px; bottom: -20px;">
+                    <img class="guardian-statue" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR8AyBlti_G6jkGC1lKWl3dNU1aqPrQyryoxg&s" alt="Kitsune" />
+                    <img class="guardian-shisa" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQyPcpMaQW_90WDRnqapKezhV8HAMJsOnbZPA&s" alt="Shisa Derecha" />
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- SECCIÓN 1: BIBLIOTECA -->
+    <section id="section-library" class="app-section active">
+        <main class="library-mode">
+            <div class="library-frame">
+                <div class="library-inner">
+                    <div class="library-molding top"></div>
+                    <div id="bookshelvesContainer"></div>
+                    <div class="library-molding bottom"></div>
+                </div>
+            </div>
+        </main>
+        <footer>
+            <p>📚 ArbolApp Integrada</p>
+            <button onclick="libraryManager.downloadJSON()" class="footer-btn">💾 Descargar Documentos (.json)</button>
+        </footer>
+    </section>
+
+    <!-- SECCIÓN 2: RED SOCIAL -->
+    <section id="section-social" class="app-section">
+        <div class="app-layout">
+            <aside class="sidebar">
+                <div class="sidebar-header"><h2>🌱 ArbolApp</h2></div>
+                <div class="sidebar-tabs">
+                    <button onclick="socialManager.switchTab('editor')" class="tab-btn active">✏️ Escribir</button>
+                    <button onclick="socialManager.switchTab('data')" class="tab-btn">💾 Datos</button>
+                </div>
+                <div id="tab-editor" class="sidebar-content">
+                    <div class="form-group"><label>Título</label><input type="text" id="post-title" placeholder="Ej: Un nuevo día"></div>
+                    <div class="form-group"><label>Contenido</label><textarea id="post-content" rows="4" placeholder="Escribe aquí..."></textarea></div>
+                    <div class="form-group"><label>Archivo (en /media/)</label><input type="text" id="post-media" placeholder="ej: imagen.jpg"></div>
+                    <div class="form-group"><label>Tipo</label>
+                        <select id="post-type">
+                            <option value="image">Imagen</option>
+                            <option value="video">Video</option>
+                            <option value="audio">Audio</option>
+                            <option value="document">PDF</option>
+                            <option value="none">Solo Texto</option>
+                        </select>
+                    </div>
+                    <button onclick="socialManager.publish()" class="btn-action">🌱 Publicar</button>
+                </div>
+                <div id="tab-data" class="sidebar-content hidden">
+                    <h3 style="color:var(--leaf-light); border-bottom:1px solid #5d4037; padding-bottom:5px;">📦 Sincronización</h3>
+                    
+                    <div style="background: rgba(255, 152, 0, 0.1); padding:10px; border-radius:5px; margin-bottom:15px; border:1px solid #FF9800;">
+                        <h4 style="margin:0 0 5px 0; color:#FF9800;">📡 Generador RSS</h4>
+                        <p style="font-size:0.8rem; color:#ffe0b2; margin-bottom:10px;">Para que Mastodon pueda seguirte, actualiza el archivo rss.xml.</p>
+                        <div class="form-group">
+                            <label style="font-size:0.8rem;">URL de tu Sitio:</label>
+                            <input type="text" id="site-url-input" placeholder="https://usuario.github.io/repo/">
+                        </div>
+                        <button class="btn-action" style="background:#FF9800;" onclick="socialManager.generateAndDownloadRSS()">⬇️ Descargar rss.xml</button>
+                    </div>
+
+                    <hr style="border:0; border-top:1px dashed #5d4037; margin:20px 0;">
+                    <p style="font-size:0.85rem; color:#cfd8dc; margin-bottom:15px;">Tus posts se guardan localmente. Exporta el JSON para hacerlos permanentes.</p>
+                    <button onclick="socialManager.exportPosts()" class="btn-action">⬇️ Descargar posts.json</button>
+                    <button onclick="socialManager.clearLocal()" class="btn-secondary" style="margin-top:10px;">🗑️ Borrar local</button>
+                </div>
+            </aside>
+            <main class="main-feed">
+                <div class="tree-trunk">
+                    <header class="feed-header">
+                        <h1>🌳 Muro Social</h1>
+                    </header>
+                    <nav class="nav-branches">
+                        <button onclick="socialManager.loadFeed('my')" class="nav-btn active">Mis Hojas</button>
+                        <button onclick="socialManager.loadFeed('external')" class="nav-btn">Ramas RSS</button>
+                    </nav>
+                    <div id="feed-container"></div>
+                </div>
+            </main>
+        </div>
+    </section>
+
+    <!-- SECCIÓN 3: CHAT P2P -->
+    <section id="section-p2p" class="app-section">
+        <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--wood-dark); color: white;">
+            <h1 style="margin-bottom: 20px;">🔒 Chat P2P Cifrado</h1>
+            <div class="p2p-box" style="max-width: 500px; width: 90%;">
+                <div style="text-align:center; margin-bottom:15px;">
+                    <div id="p2p-status-icon" class="phone-icon phone-grey">📱</div>
+                    <div id="p2p-status-text" style="margin-top:5px; font-weight:bold;">Desconectado</div>
+                </div>
+                
+                <div style="background:rgba(46,125,50,0.1); padding:10px; border-radius:5px; margin-bottom:15px; border:1px dashed var(--leaf-light);">
+                    <p style="margin:0; font-size:0.8rem; color:#cfd8dc;">🔐 Cifrado E2E: Acuerda una contraseña con tu amigo fuera de esta app.</p>
+                </div>
+
+                <div class="p2p-log" id="p2p-log">Sistema iniciado...</div>
+                
+                <div style="margin-bottom:10px;">
+                    <label class="crypto-label">🔑 Contraseña de Cifrado:</label>
+                    <input type="password" id="p2p-password" class="crypto-field" placeholder="Clave secreta compartida...">
+                </div>
+
+                <div class="chat-window" id="p2p-chat"></div>
+
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:0.8rem; color:#aaa;">Tu ID:</label>
+                    <div style="display:flex; gap:5px;">
+                        <input type="text" id="my-peer-id-display" readonly style="flex:1; background:#222; border:1px solid #555; color:#fff; padding:5px; font-family:monospace;">
+                        <button onclick="p2pManager.copyId()" style="cursor:pointer; padding:5px 10px;">📋</button>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:0.8rem; color:#aaa;">Conectar con ID:</label>
+                    <input type="text" id="remote-id" placeholder="Pega el ID aquí..." style="width:100%; padding:8px; margin-top:5px;">
+                </div>
+
+                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                    <button onclick="p2pManager.connect()" class="btn-action" style="flex:1; background:#2196F3;">📞 Conectar</button>
+                </div>
+
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="p2p-msg" placeholder="Mensaje secreto..." disabled style="flex:1; padding:10px;">
+                    <button onclick="p2pManager.send()" id="btn-send-msg" disabled style="padding:10px 20px; background:var(--flower-pink); color:white; border:none; border-radius:5px; cursor:pointer;">➤</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL LECTOR -->
+    <div id="reader-modal" class="reader-modal">
+        <div class="wood-panel">
+            <button onclick="readerManager.close()" style="background:none; border:none; color:inherit; cursor:pointer; font-size:1.5rem;">&times;</button>
+            <h3>Lector de Documentos</h3>
+        </div>
+        <div class="reader-desk">
+            <div class="paper-sheet">
+                <iframe id="pdf-iframe" src=""></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- GATOS (Ocultos inicialmente, se muestran en biblioteca) -->
+    <div id="tricolorCat" class="cat-container facing-right" style="display:none;">
+        <svg class="cat-svg" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+            <path class="cat-tail" d="M30,90 Q5,70 15,50" fill="none" />
+            <ellipse class="cat-body" cx="100" cy="100" rx="60" ry="35" />
+            <path class="patch-black" d="M60,75 Q80,65 110,75 Q120,85 100,125 Q70,130 60,100 Z" opacity="0.9" />
+            <circle class="cat-head" cx="150" cy="60" r="35" />
+            <path class="patch-orange" d="M125,40 Q150,20 175,45 Q180,60 160,65 Q130,60 125,40 Z" />
+            <path class="patch-black" d="M140,30 Q150,15 160,30 Q155,40 145,35 Z" opacity="0.8" />
+            <path class="patch-black" d="M115,45 Q110,60 125,70" fill="none" stroke="#2c3e50" stroke-width="4" stroke-linecap="round" opacity="0.8" />
+            <path d="M120,40 L110,10 L140,30 Z" fill="#e67e22" stroke="#d35400" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M160,40 L175,10 L150,30 Z" fill="#fffbf0" stroke="#ccc" stroke-width="2" stroke-linejoin="round"/>
+            <g transform="translate(135, 60)">
+                <circle r="5" class="cat-eye" />
+                <circle cy="1" r="2" class="cat-pupil" />
+                <path d="M-6,0 Q0,5 6,0 L6,8 L-6,8 Z" class="eyelid" />
+            </g>
+            <g transform="translate(165, 60)">
+                <circle r="5" class="cat-eye" />
+                <circle cy="1" r="2" class="cat-pupil" />
+                <path d="M-6,0 Q0,5 6,0 L6,8 L-6,8 Z" class="eyelid" />
+            </g>
+            <path d="M148,72 L152,72 L150,78 Z" class="cat-nose" />
+            <path d="M150,78 Q145,85 140,78 M150,78 Q155,85 160,78" fill="none" stroke="#2c3e50" stroke-width="2" stroke-linecap="round"/>
+            <g stroke="#2c3e50" stroke-width="1" fill="none">
+                <path d="M140,75 L120,70" />
+                <path d="M140,80 L120,80" />
+                <path d="M160,75 L180,70" />
+                <path d="M160,80 L180,80" />
+            </g>
+            <ellipse id="frontPaw" class="cat-paw" cx="130" cy="125" rx="12" ry="8" />
+            <ellipse class="cat-paw" cx="150" cy="125" rx="12" ry="8" />
+        </svg>
+    </div>
+
+    <div id="tricolorCat2" class="cat-container small-cat facing-right" style="display:none;">
+        <svg class="cat-svg" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+            <path class="cat-tail" d="M30,90 Q5,70 15,50" fill="none" />
+            <ellipse class="cat-body" cx="100" cy="100" rx="60" ry="35" />
+            <path class="patch-black" d="M60,75 Q80,65 110,75 Q120,85 100,125 Q70,130 60,100 Z" opacity="0.9" />
+            <circle class="cat-head" cx="150" cy="60" r="35" />
+            <path class="patch-orange" d="M125,40 Q150,20 175,45 Q180,60 160,65 Q130,60 125,40 Z" />
+            <path class="patch-black" d="M140,30 Q150,15 160,30 Q155,40 145,35 Z" opacity="0.8" />
+            <path class="patch-black" d="M115,45 Q110,60 125,70" fill="none" stroke="#2c3e50" stroke-width="4" stroke-linecap="round" opacity="0.8" />
+            <path d="M120,40 L110,10 L140,30 Z" fill="#e67e22" stroke="#d35400" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M160,40 L175,10 L150,30 Z" fill="#fffbf0" stroke="#ccc" stroke-width="2" stroke-linejoin="round"/>
+            <g transform="translate(135, 60)">
+                <circle r="5" class="cat-eye" />
+                <circle cy="1" r="2" class="cat-pupil" />
+                <path d="M-6,0 Q0,5 6,0 L6,8 L-6,8 Z" class="eyelid" />
+            </g>
+            <g transform="translate(165, 60)">
+                <circle r="5" class="cat-eye" />
+                <circle cy="1" r="2" class="cat-pupil" />
+                <path d="M-6,0 Q0,5 6,0 L6,8 L-6,8 Z" class="eyelid" />
+            </g>
+            <path d="M148,72 L152,72 L150,78 Z" fill="black" />
+            <path d="M150,78 Q145,85 140,78 M150,78 Q155,85 160,78" fill="none" stroke="#2c3e50" stroke-width="2" stroke-linecap="round"/>
+            <g stroke="#2c3e50" stroke-width="1" fill="none">
+                <path d="M140,75 L120,70" />
+                <path d="M140,80 L120,80" />
+                <path d="M160,75 L180,70" />
+                <path d="M160,80 L180,80" />
+            </g>
+            <ellipse id="frontPaw2" class="cat-paw" cx="130" cy="125" rx="12" ry="8" />
+            <ellipse class="cat-paw" cx="150" cy="125" rx="12" ry="8" />
+        </svg>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast" class="toast">Mensaje</div>
+
+    <!-- CONFIGURACIÓN P2P -->
+    <script src="p2p-config.js"></script>
+
+    <!-- JAVASCRIPT PRINCIPAL -->
+    <script>
+        // ===========================================
+        // DATOS POR DEFECTO
+        // ===========================================
+        const DEFAULT_BOOKS = [
+            { id: 1, title: 'Sutra del Diamante', author: 'Buda', year: -400, color: '#9acd32', pdfUrl: 'https://www.lastelladelmattino.org/wp-content/uploads/2010/04/El-diamante_parte-budista-completa_F.pdf' },
+            { id: 2, title: 'Manual de Permacultura', author: 'FAO', year: 2018, color: '#2E8B57', pdfUrl: 'https://www.fao.org/4/ah501s/ah501s.pdf' },
+            { id: 3, title: 'Tao Te King', author: 'Lao Tse', year: 500, color: '#3CB371', pdfUrl: 'https://bibliotecadigital.ilce.edu.mx/Colecciones/ObrasClasicas/_docs/TaoTeKing_LaoTse.pdf' }
+        ];
+
+        const DEFAULT_SOURCES = [
+            { name: 'Perfil (Noticias)', url: 'https://www.perfil.com/feed/' },
+            { name: 'Simon Willison (IA)', url: 'https://fedi.simonwillison.net/@simon.rss' },
+            { name: 'The Verge (Tech)', url: 'https://mastodon.social/@theverge.rss' },
+            { name: 'Hugging Face (IA)', url: 'https://huggingface.social/@huggingface.rss' },
+            { name: 'DistroTube (Linux)', url: 'https://fosstodon.org/@distrotube.rss' },
+            { name: 'FSFE (Software Libre)', url: 'https://fosstodon.org/@fsfe.rss' }
+        ];
+
+        // ===========================================
+        // APP MANAGER (NAVEGACIÓN)
+        // ===========================================
+        const app = {
+            navigate: (section) => {
+                document.querySelectorAll('.app-section').forEach(el => el.classList.remove('active'));
+                document.querySelectorAll('.nav-btn-wood').forEach(el => el.classList.remove('active'));
+                
+                document.getElementById(`section-${section}`).classList.add('active');
+                document.getElementById(`nav-${section}`).classList.add('active');
+
+                const body = document.body;
+                if (section === 'social' || section === 'p2p') {
+                    body.classList.remove('mode-library');
+                    body.classList.add('mode-social');
+                    // Ocultar gatos en modo social
+                    document.getElementById('tricolorCat').style.display = 'none';
+                    document.getElementById('tricolorCat2').style.display = 'none';
+                } else {
+                    body.classList.remove('mode-social');
+                    body.classList.add('mode-library');
+                    // Mostrar gatos en modo biblioteca
+                    document.getElementById('tricolorCat').style.display = 'block';
+                    document.getElementById('tricolorCat2').style.display = 'block';
+                }
+            }
+        };
+
+        // ===========================================
+        // LIBRARY MANAGER (REPARADO)
+        // ===========================================
+        const libraryManager = {
+            data: [],
+            filteredBooks: [],
+            liveBugs: [],
+
+            init: async () => {
+                try {
+                    // Intentar cargar documentos.json
+                    const res = await fetch('documentos/documentos.json');
+                    if (res.ok) {
+                        libraryManager.data = await res.json();
+                        console.log("Libros cargados desde documentos.json:", libraryManager.data.length);
+                    } else {
+                        throw new Error("Error HTTP " + res.status);
+                    }
+                } catch (e) {
+                    console.warn("No se pudo cargar documentos.json, usando defaults:", e);
+                    libraryManager.data = [...DEFAULT_BOOKS];
+                }
+                
+                libraryManager.filteredBooks = [...libraryManager.data];
+                libraryManager.render();
+                libraryManager.initCats();
+
+                // Buscador
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    const term = e.target.value.toLowerCase();
+                    libraryManager.filteredBooks = libraryManager.data.filter(b => 
+                        b.title.toLowerCase().includes(term) || 
+                        b.author.toLowerCase().includes(term)
+                    );
+                    libraryManager.render();
+                });
+            },
+
+            createBookElement: (book) => {
+                const bookDiv = document.createElement('button');
+                bookDiv.className = 'book';
+                bookDiv.style.backgroundColor = book.color || '#8B4513';
+                bookDiv.title = `${book.title} - ${book.author}`;
+                bookDiv.onclick = () => readerManager.open(book.pdfUrl, book.title);
+
+                const spine = document.createElement('div');
+                spine.className = 'book-spine';
+                bookDiv.appendChild(spine);
+
+                const texture = document.createElement('div');
+                texture.className = 'book-texture';
+                bookDiv.appendChild(texture);
+
+                const decoration = document.createElement('div');
+                decoration.className = 'book-decoration';
+                for (let i = 0; i < 3; i++) {
+                    const line = document.createElement('div');
+                    line.className = 'book-line';
+                    decoration.appendChild(line);
+                }
+                bookDiv.appendChild(decoration);
+
+                const label = document.createElement('div');
+                label.className = 'book-label';
+                const labelText = document.createElement('div');
+                labelText.className = 'book-label-text';
+                labelText.textContent = book.title.slice(0, 10);
+                const labelAuthor = document.createElement('div');
+                labelAuthor.className = 'book-label-author';
+                labelAuthor.textContent = book.author.split(' ').pop();
+                label.appendChild(labelText);
+                label.appendChild(labelAuthor);
+                bookDiv.appendChild(label);
+
+                // Añadir insecto aleatorio
+                if (Math.random() > 0.85) {
+                    const bug = libraryManager.createBug('butterfly');
+                    bookDiv.appendChild(bug);
+                } else if (Math.random() > 0.7) {
+                    const bug = libraryManager.createBug('ladybug');
+                    bookDiv.appendChild(bug);
+                }
+
+                return bookDiv;
+            },
+
+            createSpecialBook: (title, url, color) => {
+                const link = document.createElement('a');
+                link.href = url;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.className = 'special-book';
+                link.style.backgroundColor = color;
+                link.title = title;
+
+                const texture = document.createElement('div');
+                texture.className = 'special-book-texture';
+                link.appendChild(texture);
+
+                const decoration = document.createElement('div');
+                decoration.className = 'special-book-decoration';
+                for (let i = 0; i < 5; i++) {
+                    const line = document.createElement('div');
+                    line.className = 'special-book-line';
+                    decoration.appendChild(line);
+                }
+                link.appendChild(decoration);
+
+                const label = document.createElement('div');
+                label.className = 'special-book-label';
+                label.textContent = title;
+                link.appendChild(label);
+
+                if (Math.random() > 0.6) {
+                    const bug = libraryManager.createBug(Math.random() > 0.8 ? 'butterfly' : 'ladybug');
+                    link.appendChild(bug);
+                }
+
+                return link;
+            },
+
+            createBug: (type) => {
+                const bug = document.createElement('div');
+                if (type === 'butterfly') {
+                    const randColor = Math.random();
+                    let colorClass = '';
+                    if (randColor > 0.66) colorClass = 'blue';
+                    else if (randColor > 0.33) colorClass = 'yellow';
+                    bug.className = `butterfly ${colorClass}`;
+                    bug.innerHTML = '<div class="butterfly-wing left"></div><div class="butterfly-wing right"></div>';
+                } else if (type === 'ladybug') {
+                    bug.className = 'ladybug-container';
+                    bug.innerHTML = `
+                        <div class="ladybug-wing-under left"></div>
+                        <div class="ladybug-wing-under right"></div>
+                        <div class="ladybug-head"></div>
+                        <div class="ladybug-shell left"><div class="ladybug-spot-shell ls-1"></div><div class="ladybug-spot-shell ls-2"></div></div>
+                        <div class="ladybug-shell right"><div class="ladybug-spot-shell ls-3"></div><div class="ladybug-spot-shell ls-4"></div></div>
+                    `;
+                }
+                libraryManager.liveBugs.push(bug);
+                return bug;
+            },
+
+            createWalkingLadybug: () => {
+                const container = document.createElement('div');
+                container.className = 'ladybug-walking';
+                container.innerHTML = `
+                    <div class="spot lw-s1"></div>
+                    <div class="spot lw-s2"></div>
+                    <div class="spot lw-s3"></div>
+                    <div class="spot lw-s4"></div>
+                    <div class="ladybug-walking-legs"></div>
+                `;
+                
+                const direction = Math.random() > 0.5 ? 1 : -1;
+                const startX = direction === 1 ? -10 : 110;
+                const endX = direction === 1 ? 110 : -10;
+                const duration = 10000 + Math.random() * 5000;
+                
+                container.style.left = startX + '%';
+                container.style.bottom = '5px';
+                container.style.transform = `scaleX(${direction})`;
+                
+                container.animate([
+                    { left: startX + '%' },
+                    { left: endX + '%' }
+                ], { duration: duration, iterations: Infinity, easing: 'linear' });
+                
+                libraryManager.liveBugs.push(container);
+                return container;
+            },
+
+            createBookshelf: (books, isFirstShelf, alignLeft) => {
+                const shelfDiv = document.createElement('div');
+                shelfDiv.className = 'bookshelf';
+                
+                const shelfBg = document.createElement('div');
+                shelfBg.className = 'bookshelf-bg';
+                
+                const booksContainer = document.createElement('div');
+                booksContainer.className = 'books-container';
+                if (alignLeft) booksContainer.classList.add('align-left');
+                else booksContainer.classList.add('align-right');
+
+                // Las 3 enciclopedias especiales solo en el primer estante
+                if (isFirstShelf) {
+                    booksContainer.appendChild(libraryManager.createSpecialBook('NihongoApp', 'https://kami00dragon.github.io/NihongoApp/index.html', '#8B0000'));
+                    booksContainer.appendChild(libraryManager.createSpecialBook('AeternusApp', 'https://kami00dragon.github.io/AeternusApp/', '#5D4037'));
+                    booksContainer.appendChild(libraryManager.createSpecialBook('GramaticApp', 'https://kami00dragon.github.io/gramaticapp/#posturas-teoricas', '#424242'));
+                }
+
+                books.forEach(book => {
+                    booksContainer.appendChild(libraryManager.createBookElement(book));
+                });
+
+                const shelfBoard = document.createElement('div');
+                shelfBoard.className = 'shelf-board';
+                shelfBg.appendChild(booksContainer);
+                shelfBg.appendChild(shelfBoard);
+                shelfDiv.appendChild(shelfBg);
+
+                if (Math.random() > 0.7) {
+                    shelfBg.appendChild(libraryManager.createWalkingLadybug());
+                }
+
+                return shelfDiv;
+            },
+
+            render: () => {
+                const container = document.getElementById('bookshelvesContainer');
+                container.innerHTML = '';
+                libraryManager.liveBugs = [];
+
+                if (libraryManager.filteredBooks.length === 0) {
+                    container.innerHTML = '<div style="text-align:center;padding:3rem;color:#fcd34d;"><h2>No se encontraron libros</h2></div>';
+                    return;
+                }
+
+                // Generar 100 estantes distribuyendo los libros
+                const totalShelves = 100;
+                const booksPerShelf = Math.ceil(libraryManager.filteredBooks.length / totalShelves);
+                
+                for (let i = 0; i < totalShelves; i++) {
+                    const startIdx = i * booksPerShelf;
+                    const shelfBooks = libraryManager.filteredBooks.slice(startIdx, startIdx + booksPerShelf);
+                    if (shelfBooks.length === 0) continue;
+                    
+                    const shelfElement = libraryManager.createBookshelf(shelfBooks, i === 0, i % 2 === 0);
+                    container.appendChild(shelfElement);
+                }
+            },
+
+            downloadJSON: () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(libraryManager.data, null, 2));
+                const node = document.createElement('a');
+                node.setAttribute("href", dataStr);
+                node.setAttribute("download", "documentos.json");
+                document.body.appendChild(node);
+                node.click();
+                node.remove();
+                showToast("Archivo documentos.json descargado");
+            },
+
+            initCats: () => {
+                setTimeout(() => {
+                    const cat1 = new TricolorCat('tricolorCat');
+                    cat1.start();
+                    
+                    const cat2 = new TricolorCat('tricolorCat2');
+                    setTimeout(() => cat2.start(), 2000);
+
+                    // Loop de interacción gato-bicho
+                    setInterval(() => {
+                        const cat1Rect = document.getElementById('tricolorCat').getBoundingClientRect();
+                        const cat2Rect = document.getElementById('tricolorCat2').getBoundingClientRect();
+                        const cats = [{ rect: cat1Rect, instance: cat1 }, { rect: cat2Rect, instance: cat2 }];
+
+                        cats.forEach(catObj => {
+                            if (catObj.rect.right > 0 && catObj.rect.left < window.innerWidth) {
+                                libraryManager.liveBugs.forEach(bug => {
+                                    if (!bug.getBoundingClientRect) return;
+                                    const bugRect = bug.getBoundingClientRect();
+                                    const dist = Math.hypot(catObj.rect.x - bugRect.x, catObj.rect.y - bugRect.y);
+                                    if (dist < 150) catObj.instance.tryTouchBug();
+                                });
+                            }
+                        });
+                    }, 500);
+                }, 1000);
+            }
+        };
+
+        // ===========================================
+        // CLASES DE ANIMACIONES (GATO Y ZORRO)
+        // ===========================================
+        class BabyFox {
+            constructor() {
+                this.container = document.createElement('div');
+                this.container.className = 'baby-fox';
+                this.container.innerHTML = `
+                    <svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M40,100 Q-10,70 10,40 Q20,20 40,30 Q50,40 45,60 Z" fill="#E65100" />
+                        <path d="M10,40 Q20,20 40,30 Q30,25 20,35 Z" fill="#FFF3E0" />
+                        <ellipse cx="110" cy="110" rx="40" ry="35" fill="#E65100" />
+                        <ellipse cx="110" cy="120" rx="20" ry="12" fill="#FFF3E0" />
+                        <circle cx="150" cy="80" r="35" fill="#E65100" />
+                        <path d="M135,95 Q150,105 165,95 Q160,110 150,110 Q140,110 135,95" fill="#FFF3E0" />
+                        <path d="M130,60 L115,25 L145,50 Z" fill="#E65100" />
+                        <path d="M170,60 L185,25 L155,50 Z" fill="#E65100" />
+                        <path d="M130,55 L120,35 L142,52 Z" fill="#FFF3E0" />
+                        <path d="M170,55 L180,35 L158,52 Z" fill="#FFF3E0" />
+                        <path d="M140,75 Q145,80 150,75" fill="none" stroke="#3E2723" stroke-width="2" stroke-linecap="round" />
+                        <path d="M150,75 Q155,80 160,75" fill="none" stroke="#3E2723" stroke-width="2" stroke-linecap="round" />
+                        <circle cx="150" cy="90" r="4" fill="#3E2723" />
+                    </svg>
+                `;
+                document.body.appendChild(this.container);
+                this.width = 130;
+                this.isBusy = false;
+            }
+
+            start() { this.scheduleNextAction(); }
+
+            scheduleNextAction() {
+                const delay = 5000 + Math.random() * 10000;
+                setTimeout(() => { if (!this.isBusy) this.decideAction(); }, delay);
+            }
+
+            decideAction() {
+                if (Math.random() < 0.7) this.peek();
+                else this.runSolo();
+            }
+
+            peek() {
+                this.isBusy = true;
+                const side = Math.random() > 0.5 ? 'right' : 'left';
+                this.container.style.transition = 'none';
+
+                if (side === 'left') {
+                    this.container.style.transform = 'scaleX(1)';
+                    this.container.style.left = '-130px';
+                    this.container.style.bottom = '3rem';
+                } else {
+                    this.container.style.transform = 'scaleX(-1)';
+                    this.container.style.left = '100vw';
+                    this.container.style.bottom = '3rem';
+                }
+
+                void this.container.offsetWidth;
+                this.container.style.transition = 'left 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                
+                if (side === 'left') this.container.style.left = '0px';
+                else this.container.style.left = 'calc(100vw - 130px)';
+
+                setTimeout(() => this.hidePeek(side), 1500);
+            }
+
+            hidePeek(side) {
+                this.container.style.transition = 'left 0.5s ease-in';
+                if (side === 'left') this.container.style.left = '-150px';
+                else this.container.style.left = '100vw';
+                setTimeout(() => { this.isBusy = false; this.scheduleNextAction(); }, 500);
+            }
+
+            runSolo() {
+                this.isBusy = true;
+                const direction = Math.random() > 0.5 ? 'LtoR' : 'RtoL';
+                const shelfBottom = this.getShelfBottomPosition();
+                this.runAction(direction, shelfBottom, () => { this.isBusy = false; this.scheduleNextAction(); });
+            }
+
+            runAction(direction, bottomPos, callback) {
+                this.container.style.transition = 'none';
+                
+                if (direction === 'LtoR') {
+                    this.container.style.transform = 'scaleX(1)';
+                    this.container.style.left = '-250px';
+                } else {
+                    this.container.style.transform = 'scaleX(-1)';
+                    this.container.style.left = '100vw';
+                }
+                
+                this.container.style.bottom = `${bottomPos}px`;
+                void this.container.offsetWidth;
+
+                const duration = 3500;
+                this.container.style.transition = `left ${duration}ms linear`;
+
+                if (direction === 'LtoR') this.container.style.left = '100vw';
+                else this.container.style.left = '-250px';
+
+                setTimeout(() => { if (callback) callback(); }, duration);
+            }
+
+            getShelfBottomPosition() {
+                const shelves = document.querySelectorAll('.shelf-board');
+                if (shelves.length === 0) return 3;
+                const randomShelf = shelves[Math.floor(Math.random() * shelves.length)];
+                return window.innerHeight - randomShelf.getBoundingClientRect().top;
+            }
+        }
+
+        class TricolorCat {
+            constructor(elementId) {
+                this.container = document.getElementById(elementId);
+                if (!this.container) return;
+                this.pawGroup = this.container.querySelector('.cat-paw');
+                this.width = parseInt(getComputedStyle(this.container).width) || 150;
+                this.isRunning = false;
+                this.setupInteractions();
+            }
+
+            setupInteractions() {
+                const react = (e) => {
+                    this.hideCompletely();
+                    clearTimeout(this.timer);
+                    clearTimeout(this.peekTimer);
+                    this.scheduleNextAction();
+                };
+                this.container.addEventListener('click', react);
+                this.container.addEventListener('touchstart', (e) => { e.preventDefault(); react(e); });
+            }
+
+            start() { this.scheduleNextAction(); }
+
+            scheduleNextAction() {
+                const delay = 2000 + Math.random() * 3000;
+                this.timer = setTimeout(() => this.decideAction(), delay);
+            }
+
+            decideAction() {
+                this.container.classList.remove('is-running-anim');
+                if (this.pawGroup) this.pawGroup.classList.remove('swiping');
+                
+                const rand = Math.random();
+                if (rand < 0.10) this.initiateChase();
+                else if (rand < 0.6) this.runOnShelves();
+                else this.peek();
+            }
+
+            initiateChase() {
+                if (!window.foxInstance) window.foxInstance = new BabyFox();
+                const direction = Math.random() > 0.5 ? 'LtoR' : 'RtoL';
+                const shelfBottom = this.getShelfBottomPosition();
+                window.foxInstance.runAction(direction, shelfBottom, null);
+                setTimeout(() => this.runOnShelves(direction, shelfBottom), 400);
+            }
+
+            getShelfBottomPosition() {
+                const shelves = document.querySelectorAll('.shelf-board');
+                if (shelves.length === 0) return 2;
+                const visibleShelves = Array.from(shelves).filter(s => {
+                    const r = s.getBoundingClientRect();
+                    return r.top < window.innerHeight && r.bottom > 0;
+                });
+                const pool = visibleShelves.length > 0 ? visibleShelves : shelves;
+                const randomShelf = pool[Math.floor(Math.random() * pool.length)];
+                return window.innerHeight - randomShelf.getBoundingClientRect().top;
+            }
+
+            runOnShelves(direction = null, bottomPos = null) {
+                this.isRunning = true;
+                if (!direction) direction = Math.random() > 0.5 ? 'LtoR' : 'RtoL';
+                if (!bottomPos) bottomPos = this.getShelfBottomPosition();
+
+                this.container.style.transition = 'none';
+
+                if (direction === 'LtoR') {
+                    this.container.style.transform = 'scaleX(1)';
+                    this.container.classList.remove('facing-left');
+                    this.container.classList.add('facing-right');
+                    this.container.style.left = '-200px';
+                } else {
+                    this.container.style.transform = 'scaleX(-1)';
+                    this.container.classList.remove('facing-right');
+                    this.container.classList.add('facing-left');
+                    this.container.style.left = (window.innerWidth + 200) + 'px';
+                }
+
+                this.container.style.bottom = `${bottomPos}px`;
+                void this.container.offsetWidth;
+
+                const runTime = 3500;
+                this.container.classList.add('is-running-anim');
+                this.container.style.transition = `left ${runTime}ms linear`;
+
+                if (direction === 'LtoR') this.container.style.left = '100vw';
+                else this.container.style.left = '-200px';
+
+                setTimeout(() => {
+                    this.isRunning = false;
+                    this.container.classList.remove('is-running-anim');
+                    this.hideCompletely();
+                    this.scheduleNextAction();
+                }, runTime);
+            }
+
+            peek() {
+                this.isRunning = false;
+                const side = Math.random() > 0.5 ? 'right' : 'left';
+                this.container.style.transition = 'none';
+
+                if (side === 'left') {
+                    this.container.classList.remove('facing-left');
+                    this.container.classList.add('facing-right');
+                    this.container.style.left = `-${this.width}px`;
+                    this.container.style.bottom = `2rem`;
+                } else {
+                    this.container.classList.remove('facing-right');
+                    this.container.classList.add('facing-left');
+                    this.container.style.right = `-${this.width}px`;
+                    this.container.style.left = 'auto';
+                    this.container.style.bottom = `2rem`;
+                }
+
+                void this.container.offsetHeight;
+                this.container.style.transition = 'left 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), right 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                
+                if (side === 'left') this.container.style.left = `0px`;
+                else this.container.style.right = `0px`;
+
+                const peekTime = 1500 + Math.random() * 2000;
+                this.peekTimer = setTimeout(() => {
+                    this.hideCompletely();
+                    this.scheduleNextAction();
+                }, peekTime);
+            }
+
+            hideCompletely() {
+                clearTimeout(this.peekTimer);
+                this.container.style.transition = 'all 0.3s ease-in';
+                
+                if (this.container.style.right !== 'auto' && this.container.style.right !== '') {
+                    this.container.style.right = `-${this.width + 50}px`;
+                    setTimeout(() => { this.container.style.left = 'auto'; }, 300);
+                } else {
+                    this.container.style.left = `-${this.width + 50}px`;
+                    setTimeout(() => { this.container.style.right = 'auto'; }, 300);
+                }
+            }
+
+            tryTouchBug() {
+                if (this.pawGroup) {
+                    this.pawGroup.classList.remove('swiping');
+                    void this.pawGroup.offsetWidth;
+                    this.pawGroup.classList.add('swiping');
+                }
+            }
+        }
+
+        // ===========================================
+        // READER MANAGER
+        // ===========================================
+        const readerManager = {
+            open: (url, title) => {
+                if (!url) {
+                    showToast("Este libro no tiene PDF disponible");
+                    return;
+                }
+                if (url.includes('youtube')) {
+                    window.open(url, '_blank');
+                    return;
+                }
+
+                const modal = document.getElementById('reader-modal');
+                const iframe = document.getElementById('pdf-iframe');
+                
+                if (url.startsWith('http')) {
+                    iframe.src = `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`;
+                } else {
+                    iframe.src = url;
+                }
+                
+                modal.classList.add('active');
+            },
+            close: () => {
+                document.getElementById('reader-modal').classList.remove('active');
+                document.getElementById('pdf-iframe').src = '';
+            }
+        };
+
+        // ===========================================
+        // SOCIAL MANAGER (REPARADO CON RSS)
+        // ===========================================
+        const socialManager = {
+            data: [],
+            customSources: [],
+
+            init: async () => {
+                // Cargar posts de localStorage y servidor
+                let serverPosts = [];
+                try {
+                    const res = await fetch('social/posts.json');
+                    if (res.ok) serverPosts = await res.json();
+                } catch (e) { console.log("No posts.json encontrado"); }
+                
+                let localPosts = JSON.parse(localStorage.getItem('arbolapp_posts') || '[]');
+                const serverIds = new Set(serverPosts.map(p => p.id));
+                const uniqueLocalPosts = localPosts.filter(p => !serverIds.has(p.id));
+                socialManager.data = [...serverPosts, ...uniqueLocalPosts]
+                    .sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                socialManager.customSources = JSON.parse(localStorage.getItem('arbolapp_sources') || '[]');
+                socialManager.loadFeed('my');
+            },
+
+            switchTab: (tab) => {
+                document.querySelectorAll('.sidebar-content').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`tab-${tab}`).classList.remove('hidden');
+                document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+                event.target.classList.add('active');
+            },
+
+            publish: () => {
+                const title = document.getElementById('post-title').value.trim();
+                const content = document.getElementById('post-content').value.trim();
+                const media = document.getElementById('post-media').value.trim();
+                const type = document.getElementById('post-type').value;
+
+                if (!title || !content) {
+                    showToast("Falta título o contenido");
+                    return;
+                }
+
+                const newPost = {
+                    id: Date.now(),
+                    date: new Date().toISOString(),
+                    title,
+                    content,
+                    media: media || null,
+                    type: type === 'none' ? null : type
+                };
+
+                socialManager.data.unshift(newPost);
+                const localPosts = JSON.parse(localStorage.getItem('arbolapp_posts') || '[]');
+                localPosts.unshift(newPost);
+                localStorage.setItem('arbolapp_posts', JSON.stringify(localPosts));
+
+                showToast("Hoja publicada");
+                document.getElementById('post-title').value = '';
+                document.getElementById('post-content').value = '';
+                document.getElementById('post-media').value = '';
+                socialManager.loadFeed('my');
+            },
+
+            loadFeed: async (type) => {
+                const container = document.getElementById('feed-container');
+                
+                // Actualizar botones activos
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                event.target.classList.add('active');
+
+                if (type === 'my') {
+                    container.innerHTML = '';
+                    if (socialManager.data.length === 0) {
+                        container.innerHTML = '<div style="text-align:center;padding:2rem;color:#a5d6a7;">No hay posts aún. ¡Escribe tu primera hoja!</div>';
+                        return;
+                    }
+                    socialManager.data.forEach(post => {
+                        container.appendChild(socialManager.createPostCard(post, true));
+                    });
+                } else {
+                    await socialManager.loadBranches();
+                }
+            },
+
+            loadBranches: async () => {
+                const container = document.getElementById('feed-container');
+                container.innerHTML = `
+                    <div class="source-manager">
+                        <h4>🔗 Agregar nueva rama (RSS o Mastodon)</h4>
+                        <div class="input-group">
+                            <input type="text" id="new-source-url" placeholder="URL o @usuario@instancia.social">
+                            <button class="btn-action" style="width:auto;margin:0;" onclick="socialManager.addSource()">Agregar</button>
+                        </div>
+                    </div>
+                    <div class="loading-frog">🌱 Explorando ramas...</div>
+                `;
+
+                const allSources = [...DEFAULT_SOURCES, ...socialManager.customSources];
+                
+                for (const source of allSources) {
+                    const sourceHeader = document.createElement('h3');
+                    sourceHeader.style.cssText = "color:#81c784; border-bottom:1px solid #2e7d32; padding:10px 0; margin-top:20px;";
+                    sourceHeader.innerText = `🍃 Rama: ${source.name}`;
+                    container.appendChild(sourceHeader);
+
+                    try {
+                        // Usar rss2json.com API para convertir RSS a JSON
+                        const apiUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(source.url);
+                        const res = await fetch(apiUrl);
+                        const data = await res.json();
+                        
+                        if (data.status === 'ok' && data.items) {
+                            data.items.slice(0, 5).forEach(item => {
+                                container.appendChild(socialManager.createPostCard({
+                                    title: item.title,
+                                    date: item.pubDate,
+                                    content: item.description || item.content,
+                                    author: source.name,
+                                    link: item.link,
+                                    media: null,
+                                    type: 'none'
+                                }, false));
+                            });
+                        } else {
+                            container.innerHTML += `<div style="color:#ef9a9a;padding:10px;font-size:0.8rem;">No se pudo cargar ${source.name}</div>`;
+                        }
+                    } catch (e) {
+                        console.error("Error cargando RSS:", e);
+                        container.innerHTML += `<div style="color:#ef9a9a;padding:10px;font-size:0.8rem;">Error: ${source.name}</div>`;
+                    }
+                }
+            },
+
+            addSource: () => {
+                const input = document.getElementById('new-source-url');
+                const url = input.value.trim();
+                if (!url) return;
+
+                let finalUrl = url, name = "Fuente Externa";
+
+                // Detectar formato Mastodon @usuario@instancia
+                if (url.match(/^@[a-zA-Z0-9_-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)) {
+                    const p = url.split('@');
+                    finalUrl = `https://${p[2]}/@${p[1]}.rss`;
+                    name = `Mastodon: ${p[1]}@${p[2]}`;
+                } else if (url.includes('/@')) {
+                    try {
+                        const u = new URL(url);
+                        const user = u.pathname.split('/')[1].replace('@', '');
+                        finalUrl = `${u.origin}/@${user}.rss`;
+                        name = `Mastodon: ${user}`;
+                    } catch (e) {}
+                } else {
+                    try {
+                        name = new URL(url).hostname;
+                        finalUrl = url;
+                    } catch (e) {
+                        showToast("URL inválida");
+                        return;
+                    }
+                }
+
+                socialManager.customSources.push({ name, url: finalUrl });
+                localStorage.setItem('arbolapp_sources', JSON.stringify(socialManager.customSources));
+                input.value = '';
+                showToast("Fuente agregada");
+                socialManager.loadBranches();
+            },
+
+            createPostCard: (post, isOwn) => {
+                const card = document.createElement('article');
+                card.className = 'leaf-card';
+
+                let mediaHtml = '';
+                if (isOwn && post.media) {
+                    const path = 'media/' + post.media;
+                    const ext = post.media.split('.').pop().toLowerCase();
+                    if (['jpg', 'png', 'gif', 'jpeg'].includes(ext)) {
+                        mediaHtml = `<div class="media-container"><img src="${path}" alt="${post.title}"></div>`;
+                    } else if (['mp4', 'webm'].includes(ext)) {
+                        mediaHtml = `<div class="media-container"><video controls src="${path}"></video></div>`;
+                    } else {
+                        mediaHtml = `<a href="${path}" class="download-link">📎 Descargar ${post.media}</a>`;
+                    }
+                } else if (!isOwn && post.content) {
+                    const imgMatch = post.content.match(/<img[^>]+src="([^"]+)"/);
+                    if (imgMatch) {
+                        mediaHtml = `<div class="media-container"><img src="${imgMatch[1]}" alt="imagen"></div>`;
+                    }
+                }
+
+                // Escapar HTML para posts propios
+                let contentHtml = '';
+                if (isOwn) {
+                    contentHtml = post.content.replace(/&/g, "&amp;")
+                                             .replace(/</g, "&lt;")
+                                             .replace(/>/g, "&gt;")
+                                             .replace(/"/g, "&quot;")
+                                             .replace(/'/g, "&#039;");
+                } else {
+                    contentHtml = post.content;
+                }
+
+                card.innerHTML = `
+                    <div class="post-meta">
+                        <span>📅 ${new Date(post.date).toLocaleDateString()}</span>
+                        <span>${isOwn ? '✏️ Propio' : '🌳 ' + (post.author || 'Externo')}</span>
+                    </div>
+                    <h2 class="post-title">${post.title}</h2>
+                    ${mediaHtml}
+                    <div class="post-content">${contentHtml}</div>
+                    ${!isOwn && post.link ? `<a href="${post.link}" target="_blank" style="color:#66bb6a;display:inline-block;margin-top:10px;">Leer original ↗</a>` : ''}
+                `;
+
+                return card;
+            },
+
+            exportPosts: () => {
+                const blob = new Blob([JSON.stringify(socialManager.data, null, 2)], { type: "application/json" });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = "posts.json";
+                a.click();
+                showToast("posts.json descargado");
+            },
+
+            clearLocal: () => {
+                if (confirm("¿Borrar posts locales?")) {
+                    localStorage.removeItem('arbolapp_posts');
+                    socialManager.data = [];
+                    socialManager.loadFeed('my');
+                    showToast("Datos locales borrados");
+                }
+            },
+
+            generateAndDownloadRSS: () => {
+                const siteUrl = document.getElementById('site-url-input').value.trim();
+                if (!siteUrl) {
+                    showToast("Ingresa la URL base de tu sitio");
+                    return;
+                }
+
+                const baseUrl = siteUrl.endsWith('/') ? siteUrl : siteUrl + '/';
+                const posts = socialManager.data;
+
+                let xml = `<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+  <channel>
+    <title>Árbol: Red Social Libre</title>
+    <link>${baseUrl}</link>
+    <description>Un espacio personal y libre para compartir ideas</description>
+    <language>es</language>
+`;
+                posts.forEach(post => {
+                    const pubDate = new Date(post.date).toUTCString();
+                    const link = `${baseUrl}#post-${post.id}`;
+                    const desc = post.content.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+                    let enclosure = '';
+                    if (post.media) {
+                        const ext = post.media.split('.').pop().toLowerCase();
+                        const mime = {jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',mp4:'video/mp4',mp3:'audio/mpeg',pdf:'application/pdf'}[ext] || 'application/octet-stream';
+                        enclosure = `\n    <enclosure url="${baseUrl}media/${post.media}" type="${mime}"/>`;
+                    }
+                    xml += `
+    <item>
+      <title>${post.title}</title>
+      <link>${link}</link>
+      <description>${desc}</description>
+      <pubDate>${pubDate}</pubDate>${enclosure}
+    </item>`;
+                });
+                xml += `
+  </channel>
+</rss>`;
+
+                const blob = new Blob([xml], { type: "application/xml" });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = "rss.xml";
+                a.click();
+                showToast("rss.xml generado");
+            }
+        };
+
+        // ===========================================
+        // P2P MANAGER (REPARADO CON CIFRADO)
+        // ===========================================
+        const p2pManager = {
+            peer: null,
+            conn: null,
+            myId: null,
+
+            init: () => {
+                const config = (typeof P2P_CONFIG !== 'undefined') ? P2P_CONFIG : {
+                    iceServers: [
+                        { url: 'stun:stun.l.google.com:19302' },
+                        { url: 'stun:stun1.l.google.com:19302' }
+                    ],
+                    debug: 2
+                };
+
+                p2pManager.peer = new Peer(null, config);
+
+                p2pManager.peer.on('open', (id) => {
+                    p2pManager.myId = id;
+                    document.getElementById('my-peer-id-display').value = id;
+                    p2pManager.log("Conectado. ID: " + id);
+                    p2pManager.setStatus('idle');
+                });
+
+                p2pManager.peer.on('connection', (conn) => {
+                    p2pManager.handleConnection(conn);
+                });
+
+                p2pManager.peer.on('error', (err) => {
+                    p2pManager.log("Error: " + err.type);
+                    p2pManager.setStatus('idle');
+                });
+            },
+
+            handleConnection: (conn) => {
+                p2pManager.conn = conn;
+                conn.on('open', () => {
+                    p2pManager.setStatus('connected');
+                    p2pManager.enableChat(true);
+                    p2pManager.addSystemMessage("Conectado con éxito");
+                });
+
+                conn.on('data', async (data) => {
+                    const password = document.getElementById('p2p-password').value;
+                    if (data && typeof data === 'object' && data.encrypted) {
+                        if (!password) {
+                            p2pManager.addMessage("🔒 Mensaje cifrado (necesitas clave)", 'locked');
+                            return;
+                        }
+                        try {
+                            const decrypted = await p2pManager.decrypt(data, password);
+                            p2pManager.addMessage(decrypted, 'received');
+                        } catch (e) {
+                            p2pManager.addMessage("🚫 Error al descifrar", 'error');
+                        }
+                    } else {
+                        p2pManager.addMessage(data, 'received');
+                    }
+                });
+
+                conn.on('close', () => {
+                    p2pManager.setStatus('idle');
+                    p2pManager.enableChat(false);
+                    p2pManager.addSystemMessage("Desconectado");
+                    p2pManager.conn = null;
+                });
+            },
+
+            connect: () => {
+                const destId = document.getElementById('remote-id').value.trim();
+                if (!destId) {
+                    showToast("Ingresa ID remoto");
+                    return;
+                }
+
+                p2pManager.setStatus('calling');
+                const conn = p2pManager.peer.connect(destId, { reliable: true });
+                p2pManager.handleConnection(conn);
+            },
+
+            send: async () => {
+                const input = document.getElementById('p2p-msg');
+                const text = input.value.trim();
+                if (!text || !p2pManager.conn) return;
+
+                const password = document.getElementById('p2p-password').value;
+                let payload = text;
+
+                if (password) {
+                    try {
+                        const encrypted = await p2pManager.encrypt(text, password);
+                        payload = encrypted;
+                        p2pManager.addMessage(text, 'sent');
+                    } catch (e) {
+                        showToast("Error cifrando: " + e.message);
+                        return;
+                    }
+                } else {
+                    p2pManager.addMessage(text, 'sent');
+                }
+
+                p2pManager.conn.send(payload);
+                input.value = '';
+            },
+
+            copyId: () => {
+                const id = document.getElementById('my-peer-id-display').value;
+                navigator.clipboard.writeText(id).then(() => showToast("ID copiado"));
+            },
+
+            // Cifrado usando Web Crypto API
+            encrypt: async (text, password) => {
+                const enc = new TextEncoder();
+                const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]);
+                const key = await crypto.subtle.deriveKey(
+                    { name: "PBKDF2", salt: enc.encode("arbolapp-salt"), iterations: 100000, hash: "SHA-256" },
+                    keyMaterial,
+                    { name: "AES-GCM", length: 256 },
+                    false,
+                    ["encrypt"]
+                );
+                const iv = crypto.getRandomValues(new Uint8Array(12));
+                const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(text));
+                return {
+                    encrypted: true,
+                    iv: btoa(String.fromCharCode(...iv)),
+                    ciphertext: btoa(String.fromCharCode(...new Uint8Array(ciphertext)))
+                };
+            },
+
+            decrypt: async (data, password) => {
+                const enc = new TextEncoder();
+                const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]);
+                const key = await crypto.subtle.deriveKey(
+                    { name: "PBKDF2", salt: enc.encode("arbolapp-salt"), iterations: 100000, hash: "SHA-256" },
+                    keyMaterial,
+                    { name: "AES-GCM", length: 256 },
+                    false,
+                    ["decrypt"]
+                );
+                const iv = new Uint8Array(atob(data.iv).split("").map(c => c.charCodeAt(0)));
+                const ciphertext = new Uint8Array(atob(data.ciphertext).split("").map(c => c.charCodeAt(0)));
+                const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
+                return new TextDecoder().decode(decrypted);
+            },
+
+            log: (msg) => {
+                const el = document.getElementById('p2p-log');
+                const time = new Date().toLocaleTimeString().split(' ')[0];
+                el.innerHTML += `<div>[${time}] ${msg}</div>`;
+                el.scrollTop = el.scrollHeight;
+            },
+
+            addMessage: (text, type) => {
+                const chat = document.getElementById('p2p-chat');
+                const div = document.createElement('div');
+                div.className = `message msg-${type}`;
+                div.innerText = text;
+                chat.appendChild(div);
+                chat.scrollTop = chat.scrollHeight;
+            },
+
+            addSystemMessage: (text) => {
+                const chat = document.getElementById('p2p-chat');
+                const div = document.createElement('div');
+                div.style.cssText = "text-align:center;color:#aaa;font-size:0.8rem;margin:10px 0;";
+                div.innerText = `--- ${text} ---`;
+                chat.appendChild(div);
+                chat.scrollTop = chat.scrollHeight;
+            },
+
+            setStatus: (status) => {
+                const icon = document.getElementById('p2p-status-icon');
+                const text = document.getElementById('p2p-status-text');
+                
+                if (status === 'idle') {
+                    icon.className = 'phone-icon phone-grey';
+                    text.innerText = 'Desconectado';
+                } else if (status === 'calling') {
+                    icon.className = 'phone-icon phone-blue';
+                    text.innerText = 'Conectando...';
+                } else if (status === 'connected') {
+                    icon.className = 'phone-icon phone-green';
+                    text.innerText = 'En línea (E2E)';
+                }
+            },
+
+            enableChat: (enabled) => {
+                document.getElementById('p2p-msg').disabled = !enabled;
+                document.getElementById('btn-send-msg').disabled = !enabled;
+            }
+        };
+
+        // ===========================================
+        // UTILIDADES
+        // ===========================================
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        // ===========================================
+        // INICIALIZACIÓN
+        // ===========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            libraryManager.init();
+            socialManager.init();
+            p2pManager.init();
+            
+            // Configurar evento Enter en chat P2P
+            document.getElementById('p2p-msg').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') p2pManager.send();
+            });
+        });
+    </script>
+</body>
+</html>
