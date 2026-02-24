@@ -1,34 +1,14 @@
 [
   {
-    "id": 1,
-    "date": "2023-10-27T10:00:00",
-    "title": "Bienvenidos a Árbol",
-    "content": "Este es mi espacio en Árbol: Red Social Libre. Aquí puedo publicar lo que quiera, sin censura y con mis propios archivos.",
-    "media": "foto-bienvenida.jpg",
-    "type": "image"
+    "id": 1771954207646,
+    "date": "2026-02-24T17:30:07.646Z",
+    "title": "Primera publicación",
+    "content": "Este es el primer post de la aplicación integrada LibelulApp, que junta las aplicaciones ArbolApp y BibliotecApp en una sola red social y biblioteca. Este post lo estoy escribiendo desde la misma aplicación, y cuando lo descargue podré actualizar el archivo posts.json para que se vea en las hojas del blog. Aparentemente todo funciona, he ido arreglando cada una de las tres partes de la aplicación, primero la biblioteca, luego la sala de lectura y finalmente la red social, nada funcionaba al principio. La idea de juntarlas se me ocurrió al descubrir la IA Kimi, que puede recrear una aplicación web con solo imágenes de la misma, por lo que decidí engañar a la IA haciéndole creer que las imágenes de BibliotecApp y ArbolApp eran de la misma aplicación, y le pedí que la recreara. El resultado fue un algoritmo que permite que ambas aplicaciones funcionen juntas, pero al mismo tiempo nada funcionaba, era solo una idea general programada en forma de aplicación, pero una idea funcional. Ahora está idea está completamente funcional, programada con la IA chat.z. Por cierto, mi nombre es Hugo Silvestre Sanchez, soy bibliotecario, aunque a esta altura del año todavía no estoy trabajando de eso, me recibí no hace mucho tiempo, en el 2024, por lo que crear esta red social es también una forma de publicitarme como bibliotecario."
   },
-  {
-    "id": 2,
-    "date": "2023-10-28T14:30:00",
-    "title": "Pensando en voz alta (Audio)",
-    "content": "Hoy grabé un pequeño audio sobre mis pensamientos regarding la tecnología descentralizada.",
-    "media": "mi-podcast.mp3",
-    "type": "audio"
-  },
-  {
-    "id": 3,
-    "date": "2023-10-29T09:15:00",
-    "title": "Video del jardín",
-    "content": "Miren cómo crecen las plantas este año. La naturaleza siempre encuentra el camino.",
-    "media": "jardin.mp4",
-    "type": "video"
-  },
-  {
-    "id": 4,
-    "date": "2023-10-30T16:45:00",
-    "title": "Manifiesto Digital (PDF)",
-    "content": "He escrito un documento sobre por qué creo que debemos ser dueños de nuestro código.",
-    "media": "manifiesto.pdf",
-    "type": "document"
+   {
+    "id": 1771950470436,
+    "date": "2026-02-24T16:27:50.436Z",
+    "title": "Nuevo post",
+    "content": "Hola mundo"
   }
 ]
