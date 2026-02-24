@@ -677,10 +677,10 @@
                     }
                 } catch (e1) {
                     try {
-                        const res2 = await fetch('documentos/documentos.json');
+                        const res2 = await fetch('documentos.json');
                         if (res2.ok) {
                             loadedData = await res2.json();
-                            console.log("Libros cargados desde documentos/documentos.json:", loadedData.length);
+                            console.log("Libros cargados desde documentos.json:", loadedData.length);
                         } else {
                             throw new Error("JSON no encontrado en ninguna ruta.");
                         }
