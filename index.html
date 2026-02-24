@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ArbolApp - Biblioteca y Red Social Integrada</title>
+    <title>LibelulApp - Biblioteca y Red Social Integrada</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -248,7 +248,7 @@
         .loading-frog { text-align: center; padding: 20px; font-size: 3rem; }
 
         /* =========================================
-           CSS LECTOR (READER)
+           CSS LECTOR (READER) - SALA DE LECTURA
            ========================================= */
         .reader-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 3000; flex-direction: column; }
         .reader-modal.active { display: flex; }
@@ -256,6 +256,18 @@
         .reader-desk { flex: 1; overflow-y: auto; display: flex; justify-content: center; padding: 20px; background: radial-gradient(circle, #2d1b15, #1a0f0a); }
         .paper-sheet { position: relative; background: white; width: 100%; max-width: 900px; height: 100%; min-height: 100vh; border: 1px solid #ccc; flex-shrink: 0; }
         #pdf-iframe { width: 100%; height: 100%; border: none; }
+
+        /* =========================================
+           CSS MODAL AGREGAR LIBRO
+           ========================================= */
+        .add-book-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2500; justify-content: center; align-items: center; }
+        .add-book-overlay.active { display: flex; }
+        .add-book-box { background: var(--wood-light); padding: 2rem; border-radius: 10px; width: 90%; max-width: 500px; border: 4px solid #fcd34d; color: #fcd34d; box-shadow: 0 0 20px rgba(0,0,0,0.8); position: relative; }
+        .add-book-box h2 { margin-top: 0; text-align: center; color: #fcd34d; border-bottom: 2px solid #5d4037; padding-bottom: 10px; margin-bottom: 15px; }
+        .add-book-box label { display: block; margin-top: 10px; font-size: 0.9rem; }
+        .add-book-box input, .add-book-box select { width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #5d4037; background: #3e2723; color: white; }
+        .add-book-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        .close-modal-btn { position: absolute; top: 10px; right: 15px; background: none; border: none; color: #fcd34d; font-size: 1.5rem; cursor: pointer; }
 
         /* =========================================
            CSS P2P MODAL
@@ -314,7 +326,7 @@
                     <h1>ArbolApp - Ultimate Wood</h1>
                     <div class="search-with-stars">
                         <svg class="search-star" viewBox="0 0 100 100"><polygon points="50,5 61,40 98,40 69,55 80,90 50,75 20,90 31,55 2,40 39,40" fill="gold" stroke="#B8860B" stroke-width="2" /></svg>
-                        <input type="text" id="searchInput" class="search-input" placeholder="Buscar libro...">
+                        <input type="text" id="searchInput" class="search-input" placeholder="Buscar libro o video...">
                         <svg class="search-star" viewBox="0 0 100 100"><polygon points="50,5 61,40 98,40 69,55 80,90 50,75 20,90 31,55 2,40 39,40" fill="red" stroke="#7F1D1D" stroke-width="2" /></svg>
                     </div>
                 </div>
@@ -345,6 +357,7 @@
         </main>
         <footer>
             <p>📚 ArbolApp Integrada</p>
+            <button onclick="libraryManager.openAddModal()" class="footer-btn">➕ Agregar Libro/Video</button>
             <button onclick="libraryManager.downloadJSON()" class="footer-btn">💾 Descargar Documentos (.json)</button>
         </footer>
     </section>
@@ -455,11 +468,47 @@
         </div>
     </section>
 
-    <!-- MODAL LECTOR -->
+    <!-- MODAL AGREGAR LIBRO -->
+    <div id="add-book-modal" class="add-book-overlay">
+        <div class="add-book-box">
+            <button class="close-modal-btn" onclick="libraryManager.closeAddModal()">&times;</button>
+            <h2>Agregar a la Biblioteca</h2>
+            <div class="form-group">
+                <label>Título</label>
+                <input type="text" id="new-book-title" placeholder="Ej: El Arte de la Guerra">
+            </div>
+            <div class="form-group">
+                <label>Autor</label>
+                <input type="text" id="new-book-author" placeholder="Ej: Sun Tzu">
+            </div>
+            <div class="form-group">
+                <label>Tipo</label>
+                <select id="new-book-type">
+                    <option value="document">📄 Documento (PDF)</option>
+                    <option value="video">🎬 Video (YouTube/Vimeo)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>URL (Enlace)</label>
+                <input type="text" id="new-book-url" placeholder="https://...">
+                <small style="color:#aaa; display:block; margin-top:2px;">Para videos: enlace de YouTube. Para PDFs: enlace directo.</small>
+            </div>
+            <div class="form-group">
+                <label>Color del Lomo</label>
+                <input type="color" id="new-book-color" value="#8B4513" style="height:40px; padding:2px;">
+            </div>
+            <div class="add-book-buttons">
+                <button onclick="libraryManager.saveNewBook()" class="btn-action">💾 Guardar</button>
+                <button onclick="libraryManager.closeAddModal()" class="btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LECTOR (SALA DE LECTURA) -->
     <div id="reader-modal" class="reader-modal">
         <div class="wood-panel">
             <button onclick="readerManager.close()" style="background:none; border:none; color:inherit; cursor:pointer; font-size:1.5rem;">&times;</button>
-            <h3>Lector de Documentos</h3>
+            <h3>Sala de Lectura</h3>
         </div>
         <div class="reader-desk">
             <div class="paper-sheet">
@@ -546,12 +595,26 @@
     <!-- JAVASCRIPT PRINCIPAL -->
     <script>
         // ===========================================
-        // DATOS POR DEFECTO
+        // DATOS POR DEFECTO Y EMBEDDED (BACKUP)
         // ===========================================
+        
+        // Datos básicos de respaldo
         const DEFAULT_BOOKS = [
-            { id: 1, title: 'Sutra del Diamante', author: 'Buda', year: -400, color: '#9acd32', pdfUrl: 'https://www.lastelladelmattino.org/wp-content/uploads/2010/04/El-diamante_parte-budista-completa_F.pdf' },
-            { id: 2, title: 'Manual de Permacultura', author: 'FAO', year: 2018, color: '#2E8B57', pdfUrl: 'https://www.fao.org/4/ah501s/ah501s.pdf' },
-            { id: 3, title: 'Tao Te King', author: 'Lao Tse', year: 500, color: '#3CB371', pdfUrl: 'https://bibliotecadigital.ilce.edu.mx/Colecciones/ObrasClasicas/_docs/TaoTeKing_LaoTse.pdf' }
+            { id: 1, title: 'Sutra del Diamante', author: 'Buda', year: -400, color: '#9acd32', type: 'document', pdfUrl: 'https://www.lastelladelmattino.org/wp-content/uploads/2010/04/El-diamante_parte-budista-completa_F.pdf' },
+            { id: 2, title: 'Manual de Permacultura', author: 'FAO', year: 2018, color: '#2E8B57', type: 'document', pdfUrl: 'https://www.fao.org/4/ah501s/ah501s.pdf' },
+            { id: 3, title: 'Tao Te King', author: 'Lao Tse', year: 500, color: '#3CB371', type: 'document', pdfUrl: 'https://bibliotecadigital.ilce.edu.mx/Colecciones/ObrasClasicas/_docs/TaoTeKing_LaoTse.pdf' }
+        ];
+
+        // ================================================================
+        // DATOS INTEGRADOS (EMBEDDED LIBRARY)
+        // Si el fetch falla, se usan estos datos.
+        // Pega aquí tu lista completa de más de 200 libros si lo deseas.
+        // Formato: { id, title, author, type: 'document'|'video', pdfUrl (o url), color }
+        // ================================================================
+        const EMBEDDED_LIBRARY = [
+            { id: 101, title: 'Video Prueba', author: 'YouTube', type: 'video', color: '#FF0000', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+            { id: 102, title: 'Intro a React', author: 'Tech', type: 'video', color: '#61DAFB', url: 'https://www.youtube.com/watch?v=SqcY0GlETPk' },
+            // ... Agrega más aquí ...
         ];
 
         const DEFAULT_SOURCES = [
@@ -592,7 +655,7 @@
         };
 
         // ===========================================
-        // LIBRARY MANAGER (REPARADO)
+        // LIBRARY MANAGER (REPARADO Y MEJORADO)
         // ===========================================
         const libraryManager = {
             data: [],
@@ -600,21 +663,49 @@
             liveBugs: [],
 
             init: async () => {
-                try {
-                    // Intentar cargar documentos.json
-                    const res = await fetch('documentos/documentos.json');
-                    if (res.ok) {
-                        libraryManager.data = await res.json();
-                        console.log("Libros cargados desde documentos.json:", libraryManager.data.length);
-                    } else {
-                        throw new Error("Error HTTP " + res.status);
-                    }
-                } catch (e) {
-                    console.warn("No se pudo cargar documentos.json, usando defaults:", e);
-                    libraryManager.data = [...DEFAULT_BOOKS];
-                }
+                let loadedData = [];
                 
+                // 1. Intentar cargar documentos.json (Raíz y carpeta documentos/)
+                try {
+                    const res = await fetch('./documentos.json');
+                    if (res.ok) {
+                        loadedData = await res.json();
+                        console.log("Libros cargados desde ./documentos.json:", loadedData.length);
+                    } else {
+                        throw new Error("Intentando ruta alternativa...");
+                    }
+                } catch (e1) {
+                    try {
+                        const res2 = await fetch('documentos/documentos.json');
+                        if (res2.ok) {
+                            loadedData = await res2.json();
+                            console.log("Libros cargados desde documentos/documentos.json:", loadedData.length);
+                        } else {
+                            throw new Error("JSON no encontrado en ninguna ruta.");
+                        }
+                    } catch (e2) {
+                        console.warn("No se pudo cargar documentos.json externo. Usando Embedded/Defaults.");
+                        // 2. Fallback a Datos Integrados o Defaults
+                        loadedData = (EMBEDDED_LIBRARY.length > 2) ? [...EMBEDDED_LIBRARY] : [...DEFAULT_BOOKS];
+                    }
+                }
+
+                // 3. Cargar libros agregados localmente
+                const localBooks = JSON.parse(localStorage.getItem('libelula_added_books') || '[]');
+                
+                // 4. Fusionar datos: Prioridad a locales (para editar), base externa/integrada
+                // Creamos un Map para evitar duplicados por ID
+                const bookMap = new Map();
+                
+                // Añadir base de datos
+                loadedData.forEach(book => bookMap.set(book.id, book));
+                
+                // Añadir/sobreescribir con locales
+                localBooks.forEach(book => bookMap.set(book.id, book));
+
+                libraryManager.data = Array.from(bookMap.values());
                 libraryManager.filteredBooks = [...libraryManager.data];
+                
                 libraryManager.render();
                 libraryManager.initCats();
 
@@ -629,12 +720,83 @@
                 });
             },
 
+            // --- UI Agregar Libro ---
+            openAddModal: () => {
+                document.getElementById('add-book-modal').classList.add('active');
+                // Limpiar campos
+                document.getElementById('new-book-title').value = '';
+                document.getElementById('new-book-author').value = '';
+                document.getElementById('new-book-url').value = '';
+                document.getElementById('new-book-color').value = '#8B4513';
+                document.getElementById('new-book-type').value = 'document';
+            },
+
+            closeAddModal: () => {
+                document.getElementById('add-book-modal').classList.remove('active');
+            },
+
+            saveNewBook: () => {
+                const title = document.getElementById('new-book-title').value.trim();
+                const author = document.getElementById('new-book-author').value.trim();
+                const url = document.getElementById('new-book-url').value.trim();
+                const type = document.getElementById('new-book-type').value;
+                const color = document.getElementById('new-book-color').value;
+
+                if (!title || !author || !url) {
+                    showToast("Faltan datos (Título, Autor, URL)");
+                    return;
+                }
+
+                const newBook = {
+                    id: Date.now(), // ID único basado en tiempo
+                    title,
+                    author,
+                    type, // 'document' o 'video'
+                    color,
+                    // Usamos 'pdfUrl' para compatibilidad con el lector, o 'url' genérico
+                    pdfUrl: url, 
+                    url: url
+                };
+
+                // Guardar en memoria
+                libraryManager.data.unshift(newBook);
+                libraryManager.filteredBooks = [...libraryManager.data];
+
+                // Guardar en localStorage (Persistencia de agregados)
+                const localBooks = JSON.parse(localStorage.getItem('libelula_added_books') || '[]');
+                localBooks.unshift(newBook);
+                localStorage.setItem('libelula_added_books', JSON.stringify(localBooks));
+
+                showToast("Libro agregado correctamente");
+                libraryManager.closeAddModal();
+                libraryManager.render();
+            },
+
+            // --- Renderizado ---
             createBookElement: (book) => {
                 const bookDiv = document.createElement('button');
                 bookDiv.className = 'book';
                 bookDiv.style.backgroundColor = book.color || '#8B4513';
+                
+                // Lógica de visualización y click
+                const isVideo = book.type === 'video';
+                const displayTitle = isVideo ? "Ver Video" : book.title.slice(0, 10);
+                const displayAuthor = isVideo ? "Video" : book.author.split(' ').pop();
+                
                 bookDiv.title = `${book.title} - ${book.author}`;
-                bookDiv.onclick = () => readerManager.open(book.pdfUrl, book.title);
+
+                // Evento Click
+                bookDiv.onclick = () => {
+                    if (isVideo) {
+                        const targetUrl = book.url || book.pdfUrl;
+                        if (targetUrl) window.open(targetUrl, '_blank');
+                        else showToast("El video no tiene enlace");
+                    } else {
+                        // Es documento -> Sala de Lectura
+                        const targetUrl = book.pdfUrl || book.url;
+                        readerManager.open(targetUrl, book.title);
+                    }
+                };
 
                 const spine = document.createElement('div');
                 spine.className = 'book-spine';
@@ -657,10 +819,10 @@
                 label.className = 'book-label';
                 const labelText = document.createElement('div');
                 labelText.className = 'book-label-text';
-                labelText.textContent = book.title.slice(0, 10);
+                labelText.textContent = displayTitle;
                 const labelAuthor = document.createElement('div');
                 labelAuthor.className = 'book-label-author';
-                labelAuthor.textContent = book.author.split(' ').pop();
+                labelAuthor.textContent = displayAuthor;
                 label.appendChild(labelText);
                 label.appendChild(labelAuthor);
                 bookDiv.appendChild(label);
@@ -810,11 +972,17 @@
                     return;
                 }
 
-                // Generar 100 estantes distribuyendo los libros
-                const totalShelves = 100;
-                const booksPerShelf = Math.ceil(libraryManager.filteredBooks.length / totalShelves);
+                // Generar estantes suficientes para los libros (ajustado dinámicamente)
+                // Para no colapsar el navegador con 200 libros visibles a la vez, usamos paginación virtual o scroll
+                // Aquí mantenemos la lógica original pero ajustamos para llenar la pantalla
+                const totalBooks = libraryManager.filteredBooks.length;
+                const booksPerShelf = Math.max(5, Math.floor(window.innerWidth / 45)); // Aprox 45px por libro
+                const totalShelves = Math.ceil(totalBooks / booksPerShelf);
                 
-                for (let i = 0; i < totalShelves; i++) {
+                // Limitamos a 100 estantes visibles por rendimiento, si hay más, el scroll del body lo maneja
+                const renderLimit = Math.min(totalShelves, 100); 
+                
+                for (let i = 0; i < renderLimit; i++) {
                     const startIdx = i * booksPerShelf;
                     const shelfBooks = libraryManager.filteredBooks.slice(startIdx, startIdx + booksPerShelf);
                     if (shelfBooks.length === 0) continue;
@@ -825,6 +993,8 @@
             },
 
             downloadJSON: () => {
+                // Descarga el estado actual de la biblioteca (Base + Locales)
+                // Esto permite al usuario subir el JSON completo a GitHub
                 const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(libraryManager.data, null, 2));
                 const node = document.createElement('a');
                 node.setAttribute("href", dataStr);
@@ -832,7 +1002,7 @@
                 document.body.appendChild(node);
                 node.click();
                 node.remove();
-                showToast("Archivo documentos.json descargado");
+                showToast("Archivo documentos.json descargado con los libros actuales");
             },
 
             initCats: () => {
@@ -1131,7 +1301,7 @@
                     showToast("Este libro no tiene PDF disponible");
                     return;
                 }
-                if (url.includes('youtube')) {
+                if (url.includes('youtube') || url.includes('youtu.be')) {
                     window.open(url, '_blank');
                     return;
                 }
@@ -1139,6 +1309,7 @@
                 const modal = document.getElementById('reader-modal');
                 const iframe = document.getElementById('pdf-iframe');
                 
+                // Usar Google Docs Viewer para PDFs externos para mejor compatibilidad
                 if (url.startsWith('http')) {
                     iframe.src = `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`;
                 } else {
@@ -1161,7 +1332,6 @@
             customSources: [],
 
             init: async () => {
-                // Cargar posts de localStorage y servidor
                 let serverPosts = [];
                 try {
                     const res = await fetch('social/posts.json');
@@ -1222,7 +1392,7 @@
                 
                 // Actualizar botones activos
                 document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                event.target.classList.add('active');
+                if(event && event.target) event.target.classList.add('active');
 
                 if (type === 'my') {
                     container.innerHTML = '';
@@ -1260,7 +1430,6 @@
                     container.appendChild(sourceHeader);
 
                     try {
-                        // Usar rss2json.com API para convertir RSS a JSON
                         const apiUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(source.url);
                         const res = await fetch(apiUrl);
                         const data = await res.json();
@@ -1294,7 +1463,6 @@
 
                 let finalUrl = url, name = "Fuente Externa";
 
-                // Detectar formato Mastodon @usuario@instancia
                 if (url.match(/^@[a-zA-Z0-9_-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)) {
                     const p = url.split('@');
                     finalUrl = `https://${p[2]}/@${p[1]}.rss`;
@@ -1345,7 +1513,6 @@
                     }
                 }
 
-                // Escapar HTML para posts propios
                 let contentHtml = '';
                 if (isOwn) {
                     contentHtml = post.content.replace(/&/g, "&amp;")
@@ -1550,7 +1717,6 @@
                 navigator.clipboard.writeText(id).then(() => showToast("ID copiado"));
             },
 
-            // Cifrado usando Web Crypto API
             encrypt: async (text, password) => {
                 const enc = new TextEncoder();
                 const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]);
@@ -1651,7 +1817,6 @@
             socialManager.init();
             p2pManager.init();
             
-            // Configurar evento Enter en chat P2P
             document.getElementById('p2p-msg').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') p2pManager.send();
             });
