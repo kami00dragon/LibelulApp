@@ -888,7 +888,7 @@
                 if (!container) return;
                 container.innerHTML = ''; libraryManager.liveBugs = [];
                 if (libraryManager.filteredBooks.length === 0) { container.innerHTML = '<div style="text-align:center;padding:3rem;color:#fcd34d;"><h2>No se encontraron libros</h2></div>'; return; }
-                const totalShelves = 20; const baseBooksPerShelf = Math.floor(libraryManager.filteredBooks.length / totalShelves); const extraBooks = libraryManager.filteredBooks.length % totalShelves;
+                const totalShelves = 100; const baseBooksPerShelf = Math.floor(libraryManager.filteredBooks.length / totalShelves); const extraBooks = libraryManager.filteredBooks.length % totalShelves;
                 for (let i = 0; i < totalShelves; i++) {
                     const booksThisShelf = baseBooksPerShelf + (i < extraBooks ? 1 : 0);
                     const startIdx = i * baseBooksPerShelf + Math.min(i, extraBooks);
