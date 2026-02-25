@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArbolApp - Red Social</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="mode-social">
+
+    <!-- Header Red Social -->
+    <header>
+        <div class="header-content">
+            <div class="nav-bar-wood">
+                <a href="index.html" class="nav-btn-wood"><i>📚</i> Biblioteca</a>
+                <a href="social.html" class="nav-btn-wood active"><i>🍃</i> Red Social</a>
+                <a href="p2p.html" class="nav-btn-wood"><i>🔒</i> Chat P2P</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- SECCIÓN RED SOCIAL -->
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header"><h2>🌱 ArbolApp</h2></div>
+            <div class="sidebar-tabs">
+                <button onclick="socialManager.switchTab('editor')" class="tab-btn active">✏️ Escribir</button>
+                <button onclick="socialManager.switchTab('data')" class="tab-btn">💾 Datos</button>
+            </div>
+            <div id="tab-editor" class="sidebar-content">
+                <div class="form-group"><label>Título</label><input type="text" id="post-title"></div>
+                <div class="form-group"><label>Contenido</label><textarea id="post-content" rows="4"></textarea></div>
+                <div class="form-group"><label>Archivo (en /media/)</label><input type="text" id="post-media" placeholder="ej: imagen.jpg"></div>
+                <div class="form-group"><label>Tipo</label>
+                    <select id="post-type">
+                        <option value="image">Imagen</option>
+                        <option value="video">Video</option>
+                        <option value="audio">Audio</option>
+                        <option value="document">PDF</option>
+                        <option value="none">Solo Texto</option>
+                    </select>
+                </div>
+                <button onclick="socialManager.publish()" class="btn-action">🌱 Publicar</button>
+            </div>
+            <div id="tab-data" class="sidebar-content hidden">
+                <p style="font-size:0.8rem; color:#ccc; margin-bottom:10px;">
+                    Los posts se guardan localmente. Exporta el JSON.
+                </p>
+                <button onclick="socialManager.exportPosts()" class="btn-action">⬇️ Descargar posts.json</button>
+                <button onclick="socialManager.clearLocal()" class="btn-secondary">🗑️ Borrar local</button>
+            </div>
+        </aside>
+        <main class="main-feed">
+            <div class="tree-trunk">
+                <header class="feed-header">
+                    <h1>🌳 Muro Social</h1>
+                </header>
+                <nav class="nav-branches">
+                    <button onclick="socialManager.loadFeed('my')" class="nav-btn active">Mis Hojas</button>
+                    <button onclick="socialManager.loadFeed('external')" class="nav-btn">Ramas RSS</button>
+                </nav>
+                <div id="feed-container"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast" class="toast">Mensaje</div>
+
+    <script>
+        const DEFAULT_POSTS = [
+            { id: 1, date: "2023-10-27T10:00:00", title: "Bienvenidos a Árbol", content: "Este es el espacio integrado.", media: "", type: "none" },
+            { id: 4, date: "2023-10-30T16:45:00", title: "Manifiesto Digital", content: "Documento sobre descentralización.", media: "manifiesto.pdf", type: "document" }
+        ];
+
+        const socialManager = {
+            data: [],
+            currentTab: 'editor',
+
+            init: async () => {
+                try {
+                    const res = await fetch('social/posts.json');
+                    if (res.ok) socialManager.data = await res.json();
+                    else throw new Error("Fail");
+                } catch (e) {
+                    console.warn("Cargando posts por defecto");
+                    const local = localStorage.getItem('arbolapp_posts');
+                    if(local) socialManager.data = JSON.parse(local);
+                    else socialManager.data = [...DEFAULT_POSTS];
+                }
+                socialManager.loadFeed('my');
+            },
+
+            switchTab: (tab) => {
+                document.querySelectorAll('.sidebar-content').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            },
+
+            publish: () => {
+                const title = document.getElementById('post-title').value;
+                const content = document.getElementById('post-content').value;
+                const media = document.getElementById('post-media').value;
+                const type = document.getElementById('post-type').value;
+
+                if(!title || !content) return showToast("Falta título o contenido");
+
+                const newPost = {
+                    id: Date.now(), date: new Date().toISOString(), title, content, media, type
+                };
+
+                socialManager.data.unshift(newPost);
+                const localPosts = JSON.parse(localStorage.getItem('arbolapp_posts') || '[]');
+                localPosts.unshift(newPost);
+                localStorage.setItem('arbolapp_posts', JSON.stringify(localPosts));
+
+                showToast("Hoja publicada");
+                document.getElementById('post-title').value = '';
+                document.getElementById('post-content').value = '';
+                socialManager.loadFeed('my');
+            },
+
+            loadFeed: (type) => {
+                const container = document.getElementById('feed-container');
+                container.innerHTML = '';
+                
+                let source = [];
+                if (type === 'my') {
+                    source = socialManager.data;
+                } else {
+                    showToast("Cargando ramas externas (Simulación)...");
+                    source = [...DEFAULT_POSTS]; 
+                }
+
+                source.forEach(post => {
+                    let mediaHtml = '';
+                    if(post.media && post.type !== 'none') {
+                        const path = post.media.startsWith('http') ? post.media : `media/${post.media}`;
+                        
+                        if(post.type === 'image') mediaHtml = `<div class="media-container"><img src="${path}"></div>`;
+                        else if(post.type === 'video') mediaHtml = `<div class="media-container"><video controls src="${path}"></video></div>`;
+                        else if(post.type === 'document') mediaHtml = `<div style="padding:10px; border:1px solid #aaa; background:#eee; color:#333; margin-top:10px; border-radius:5px;">📄 Documento adjunto: <a href="${path}" target="_blank" style="color:blue;">${post.media}</a></div>`;
+                    }
+
+                    const div = document.createElement('div');
+                    div.className = 'leaf-card';
+                    div.innerHTML = `
+                        <div class="post-meta">
+                            <span>${new Date(post.date).toLocaleDateString()}</span>
+                            <span>${type === 'my' ? '✏️ Propio' : '🌳 Externo'}</span>
+                        </div>
+                        <h3 class="post-title">${post.title}</h3>
+                        <div class="post-content">${post.content}</div>
+                        ${mediaHtml}
+                    `;
+                    container.appendChild(div);
+                });
+            },
+
+            exportPosts: () => {
+                const allPosts = [...DEFAULT_POSTS, ...JSON.parse(localStorage.getItem('arbolapp_posts') || '[]')];
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allPosts, null, 2));
+                const node = document.createElement('a');
+                node.setAttribute("href", dataStr);
+                node.setAttribute("download", "posts.json");
+                document.body.appendChild(node);
+                node.click();
+                node.remove();
+            },
+            
+            clearLocal: () => {
+                if(confirm("¿Borrar posts locales?")) {
+                    localStorage.removeItem('arbolapp_posts');
+                    socialManager.data = [...DEFAULT_POSTS];
+                    socialManager.loadFeed('my');
+                }
+            }
+        };
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            socialManager.init();
+        });
+    </script>
+</body>
+</html>

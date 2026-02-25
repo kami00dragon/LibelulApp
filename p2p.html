@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArbolApp - Chat P2P</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body class="mode-social">
+    
+    <header>
+        <div class="header-content">
+            <div class="nav-bar-wood">
+                <a href="index.html" class="nav-btn-wood"><i>📚</i> Biblioteca</a>
+                <a href="social.html" class="nav-btn-wood"><i>🍃</i> Red Social</a>
+                <a href="p2p.html" class="nav-btn-wood active"><i>🔒</i> Chat P2P</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- SECCIÓN CHAT P2P -->
+    <section style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--wood-dark); color: white; padding: 20px;">
+        <h1 style="margin-bottom: 20px;">Configuración P2P</h1>
+        <div class="p2p-box" style="max-width: 400px; text-align: center;">
+            <p>Tu ID: <strong id="my-peer-id-display" style="color: gold;">...</strong></p>
+            <button onclick="copyId()" style="margin: 10px 0; padding: 5px; cursor: pointer;">Copiar ID</button>
+            <hr style="border-color: #555; margin: 20px 0;">
+            <input type="text" id="remote-id" placeholder="ID del amigo..." style="width: 100%; margin-bottom: 10px; padding: 10px; box-sizing: border-box;">
+            <button onclick="p2pManager.connect()" class="btn-action">📞 Conectar</button>
+            <div class="p2p-log" id="p2p-log">Sistema listo...</div>
+            <div class="chat-window" id="p2p-chat"></div>
+            <input type="text" id="p2p-msg" placeholder="Mensaje..." style="width: 100%; padding: 10px; margin-top: 10px; box-sizing: border-box;" onkeypress="if(event.key==='Enter') p2pManager.send()">
+        </div>
+    </section>
+
+    <script>
+        // Configuración P2P inline para que sea standalone
+        const P2P_CONFIG = {
+            iceServers: [{ url: 'stun:stun.l.google.com:19302' }], debug: 1
+        };
+
+        const p2pManager = {
+            peer: null,
+            conn: null,
+
+            init: () => {
+                p2pManager.peer = new Peer(null, P2P_CONFIG);
+                
+                p2pManager.peer.on('open', (id) => {
+                    document.getElementById('my-peer-id-display').innerText = id;
+                    log("Conectado a la red P2P. ID: " + id);
+                });
+                
+                p2pManager.peer.on('connection', (conn) => {
+                    p2pManager.conn = conn;
+                    setupConnection(conn);
+                });
+                
+                p2pManager.peer.on('error', (err) => log("Error P2P: " + err.type));
+            },
+
+            connect: () => {
+                const destId = document.getElementById('remote-id').value;
+                if(!destId) return alert("Ingresa ID remoto");
+                
+                p2pManager.conn = p2pManager.peer.connect(destId);
+                p2pManager.conn.on('open', () => {
+                    log("Conexión establecida con " + destId);
+                    setupConnection(p2pManager.conn);
+                });
+            },
+
+            send: () => {
+                const input = document.getElementById('p2p-msg');
+                const text = input.value;
+                if(!text || !p2pManager.conn) return;
+                
+                p2pManager.conn.send(text);
+                addChatMessage("Yo: " + text, true);
+                input.value = '';
+            }
+        };
+
+        function setupConnection(conn) {
+            conn.on('data', (data) => {
+                addChatMessage("Amigo: " + data, false);
+            });
+            conn.on('close', () => log("Conexión cerrada"));
+        }
+
+        function log(msg) {
+            const el = document.getElementById('p2p-log');
+            el.innerHTML += `<div>> ${msg}</div>`;
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function addChatMessage(msg, isMine) {
+            const el = document.getElementById('p2p-chat');
+            const div = document.createElement('div');
+            div.className = isMine ? 'msg-sent' : 'msg-received';
+            div.innerText = msg;
+            el.appendChild(div);
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function copyId() {
+            const id = document.getElementById('my-peer-id-display').innerText;
+            navigator.clipboard.writeText(id).then(() => alert("ID copiado"));
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            p2pManager.init();
+        });
+    </script>
+</body>
+</html>
