@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ArbolApp - Biblioteca y Red Social Integrada</title>
+    <title>ArbolApp - Biblioteca</title>
     <link rel="stylesheet" href="style.css">
     <!-- Librerías Externas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -22,7 +22,6 @@
 
             <div class="header-title-area" id="library-header-ui">
                 <div class="center-wrapper">
-                    <!-- Título modificado sin "Ultimate Wood" -->
                     <h1>ArbolApp</h1>
                     <div class="search-with-stars">
                         <svg class="search-star" viewBox="0 0 100 100"><polygon points="50,5 61,40 98,40 69,55 80,90 50,75 20,90 31,55 2,40 39,40" fill="gold" stroke="#B8860B" stroke-width="2" /></svg>
@@ -61,7 +60,7 @@
         <button onclick="readerManager.openTextMode()" class="footer-btn">📝 Leer Texto</button>
     </footer>
 
-    <!-- MODAL LECTOR (CON TTS INTEGRADO) -->
+    <!-- MODAL LECTOR -->
     <div id="reader-modal" class="reader-modal">
         <div class="wood-panel">
             <div class="wood-panel-top-row">
@@ -82,9 +81,7 @@
         
         <div class="reader-desk">
             <div class="paper-sheet" id="reader-content-container">
-                <!-- Vista PDF -->
                 <iframe id="pdf-view" src=""></iframe>
-                <!-- Vista Texto -->
                 <textarea id="text-view" placeholder="Pega aquí el texto que quieres leer..."></textarea>
             </div>
         </div>
@@ -96,13 +93,36 @@
     <!-- LÓGICA PRINCIPAL -->
     <script>
         // ===========================================
-        // DATOS DE RESPALDO
+        // BASE DE DATOS DE LIBROS (CARGADA INTERNA)
         // ===========================================
-        const DEFAULT_BOOKS = [
-            { id: 1, title: 'Ejemplo PDF Local', author: 'Usuario', year: 2024, color: '#D2691E', pdfUrl: 'media/documentos/ejemplo.pdf' },
-            { id: 2, title: 'Sutra del Diamante', author: 'Buda', year: -400, color: '#9acd32', pdfUrl: 'https://www.lastelladelmattino.org/wp-content/uploads/2010/04/El-diamante_parte-budista-completa_F.pdf' },
-            { id: 3, title: 'Manual de Permacultura', author: 'FAO', year: 2018, color: '#2E8B57', pdfUrl: 'https://www.fao.org/4/ah501s/ah501s.pdf' }
+        
+        // 1. LAS TRES ENCICLOPEDIAS (AL PRINCIPIO)
+        const ENCYCLOPEDIAS = [
+            { id: 'enc-1', title: 'Gran Enciclopedia de la Naturaleza', author: 'Varios Autores', year: 2024, color: '#5D4037', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
+            { id: 'enc-2', title: 'Enciclopedia de la Historia Universal', author: 'Academia de Historia', year: 2023, color: '#795548', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
+            { id: 'enc-3', title: 'Enciclopedia de las Ciencias', author: 'Instituto Científico', year: 2024, color: '#8D6E63', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' }
         ];
+
+        // 2. EL RESTO DE LOS LIBROS (MÁS DE 200)
+        // Generamos libros de ejemplo para cumplir con el requisito de "más de 200".
+        // NOTA: Si tienes tus propios libros, borra este bucle y pega tu array aquí.
+        const OTHER_BOOKS = [];
+        const bookColors = ['#A1887F', '#BCAAA4', '#8D6E63', '#6D4C41', '#5D4037', '#4E342E', '#3E2723', '#00695C', '#2E7D32', '#33691E'];
+        
+        for (let i = 1; i <= 215; i++) {
+            OTHER_BOOKS.push({
+                id: `book-${i}`,
+                title: `Tomo ${i} del Saber Antiguo`,
+                author: `Autor Anónimo ${i}`,
+                year: 1900 + (i % 124),
+                color: bookColors[i % bookColors.length],
+                pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' // Enlace dummy para ejemplo
+            });
+        }
+
+        // UNIFICAR LISTA FINAL (Enciclopedias primero, luego el resto)
+        const LIBRARY_DATA = [...ENCYCLOPEDIAS, ...OTHER_BOOKS];
+
 
         // ===========================================
         // LIBRARY MANAGER
@@ -110,25 +130,21 @@
         const libraryManager = {
             data: [],
             
-            init: async () => {
-                try {
-                    const res = await fetch('documentos/documentos.json');
-                    if (res.ok) {
-                        libraryManager.data = await res.json();
-                        console.log("Libros cargados desde documentos.json");
-                    } else {
-                        throw new Error("Error HTTP");
-                    }
-                } catch (e) {
-                    console.warn("No se pudo cargar documentos.json, usando defaults.", e);
-                    libraryManager.data = [...DEFAULT_BOOKS];
-                }
+            init: () => {
+                // MODIFICACIÓN: Ya no hacemos fetch. Cargamos directamente los datos internos.
+                libraryManager.data = LIBRARY_DATA;
+                
+                console.log(`Cargados ${libraryManager.data.length} libros internos.`);
+                
                 libraryManager.render();
                 
                 // Buscador
                 document.getElementById('searchInput').addEventListener('input', (e) => {
                     const term = e.target.value.toLowerCase();
-                    const filtered = libraryManager.data.filter(b => b.title.toLowerCase().includes(term) || b.author.toLowerCase().includes(term));
+                    const filtered = libraryManager.data.filter(b => 
+                        b.title.toLowerCase().includes(term) || 
+                        b.author.toLowerCase().includes(term)
+                    );
                     libraryManager.render(filtered);
                 });
             },
@@ -136,22 +152,30 @@
             render: (books = libraryManager.data) => {
                 const container = document.getElementById('bookshelvesContainer');
                 container.innerHTML = '';
+                
+                // Renderizamos los libros en estantes de a 6 para que se vean ordenados
                 const booksPerShelf = 6;
+                
                 for (let i = 0; i < books.length; i += booksPerShelf) {
                     const shelfBooks = books.slice(i, i + booksPerShelf);
                     const shelfDiv = document.createElement('div');
                     shelfDiv.className = 'bookshelf';
+                    
                     let booksHtml = '';
                     shelfBooks.forEach(book => {
+                        // Truncamos el título si es muy largo para el lomo del libro
+                        let displayTitle = book.title.length > 15 ? book.title.substring(0, 12) + '...' : book.title;
+                        
                         booksHtml += `
                             <div class="book" style="background-color: ${book.color};" onclick="readerManager.open('${book.pdfUrl}', '${book.title}')">
                                 <div class="book-spine"></div>
                                 <div class="book-label">
-                                    <div class="book-label-text">${book.title.substring(0, 15)}...</div>
+                                    <div class="book-label-text">${displayTitle}</div>
                                 </div>
                             </div>
                         `;
                     });
+
                     shelfDiv.innerHTML = `
                         <div class="bookshelf-bg"><div class="books-container">${booksHtml}</div></div>
                         <div class="shelf-board"></div>
@@ -165,10 +189,30 @@
                 const author = prompt("Autor:");
                 const url = prompt("URL o ruta (media/archivo.pdf):");
                 if(title && url) {
-                    libraryManager.data.push({
-                        id: Date.now(), title, author, year: new Date().getFullYear(),
-                        color: '#556B2F', pdfUrl: url
-                    });
+                    const newBook = {
+                        id: 'custom-' + Date.now(),
+                        title, 
+                        author, 
+                        year: new Date().getFullYear(),
+                        color: '#556B2F', 
+                        pdfUrl: url
+                    };
+                    // Agregamos al inicio para que se vea de inmediato (después de las enciclopedias si quisiéramos, pero por defecto al principio del array)
+                    // Para mantener las enciclopedias al principio, lo ideal es insertar después del índice 2, 
+                    // pero el usuario pidió agregar libro, así que lo pondremos al principio de la lista visual o al final.
+                    // Lo pondremos al principio del array data (desplazando las enciclopedias si no estamos cuidadosos, 
+                    // pero como renderizamos `data` entero, lo insertaremos al inicio del array `libraryManager.data`).
+                    
+                    libraryManager.data.unshift(newBook); // Pone el nuevo libro al principio de TODO
+                    
+                    // Si queremos forzar que las 3 enciclopedias sigan siendo las 3 primeras:
+                    // 1. Extraemos enciclopedias
+                    const encs = libraryManager.data.filter(b => b.title.includes("Enciclopedia"));
+                    // 2. Extraemos el resto
+                    const others = libraryManager.data.filter(b => !b.title.includes("Enciclopedia"));
+                    // 3. Reordenamos
+                    libraryManager.data = [...encs, ...others];
+
                     libraryManager.render();
                     showToast("Libro agregado a la sesión local");
                 }
@@ -178,7 +222,7 @@
                 const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(libraryManager.data, null, 2));
                 const node = document.createElement('a');
                 node.setAttribute("href", dataStr);
-                node.setAttribute("download", "documentos.json");
+                node.setAttribute("download", "documentos_backup.json");
                 document.body.appendChild(node);
                 node.click();
                 node.remove();
@@ -190,15 +234,20 @@
         // READER MANAGER & TTS
         // ===========================================
         const readerManager = {
-            mode: 'pdf', // 'pdf' or 'text'
+            mode: 'pdf', 
 
             open: (url, title) => {
                 readerManager.setMode('pdf');
                 const modal = document.getElementById('reader-modal');
                 document.getElementById('reader-title-display').innerText = title || "Lector";
-                
-                // Cargar PDF
                 const iframe = document.getElementById('pdf-view');
+                
+                // Si es un enlace dummy de ejemplo o no existe, mostramos un mensaje
+                if (url.includes('dummy.pdf') || !url) {
+                   // iframe.src = "about:blank"; 
+                   // No hacemos nada, deja que cargue el dummy o el error nativo del iframe
+                }
+
                 if (url.startsWith('http')) {
                      iframe.src = `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`;
                 } else {
@@ -206,7 +255,7 @@
                 }
                 
                 modal.classList.add('active');
-                document.body.classList.add('reading-active'); // Para CSS Responsive
+                document.body.classList.add('reading-active');
             },
 
             openTextMode: () => {
@@ -219,8 +268,8 @@
             close: () => {
                 document.getElementById('reader-modal').classList.remove('active');
                 document.body.classList.remove('reading-active');
-                document.getElementById('pdf-view').src = ''; // Detener carga
-                ttsManager.stop(); // Detener audio
+                document.getElementById('pdf-view').src = ''; 
+                ttsManager.stop();
             },
 
             toggleMode: () => {
@@ -259,17 +308,15 @@
                 const select = document.getElementById('voice-select');
                 select.innerHTML = '';
                 
-                // Filtrar voces femeninas (Heurística basada en nombre común)
                 const femaleVoices = ttsManager.voices.filter(v => 
                     v.name.includes('Female') || 
                     v.name.includes('Google') || 
                     v.name.includes('Samantha') || 
                     v.name.includes('Zira') ||
                     v.name.includes('Victoria') ||
-                    v.name.includes('Jorge') == false // Exclusión básica
+                    v.name.includes('Jorge') == false
                 );
 
-                // Si no hay suficientes voces "femeninas" detectadas, usar todas
                 const voicesToUse = femaleVoices.length > 0 ? femaleVoices : ttsManager.voices;
 
                 voicesToUse.forEach(voice => {
@@ -291,8 +338,6 @@
                 if (readerManager.mode === 'text') {
                     text = document.getElementById('text-view').value;
                 } else {
-                    // Si está en modo PDF, no podemos leer el contenido del iframe directamente por seguridad (CORS).
-                    // Avisamos al usuario que cambie a modo texto.
                     showToast("Para leer PDF, copia el texto y usa el modo Texto.");
                     return; 
                 }
@@ -305,12 +350,8 @@
                     const voice = ttsManager.voices.find(v => v.name === selectedOption);
                     if(voice) utterThis.voice = voice;
 
-                    utterThis.onend = function (event) {
-                        console.log('Lectura terminada');
-                    };
-                    utterThis.onerror = function (event) {
-                        console.error('Error en TTS');
-                    };
+                    utterThis.onend = function (event) { console.log('Lectura terminada'); };
+                    utterThis.onerror = function (event) { console.error('Error en TTS'); };
                     ttsManager.synth.speak(utterThis);
                 } else {
                     showToast("No hay texto para leer.");
